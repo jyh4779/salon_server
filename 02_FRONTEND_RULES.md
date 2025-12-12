@@ -4,7 +4,7 @@
 기능 단위가 아닌 **레이어(Layer) 중심** 구조를 따른다.
 
 
-/src
+/frontend/src
   /api          # Axios 인스턴스, Endpoint별 API 호출 함수
   /assets       # 이미지, 아이콘 등 정적 리소스
   /components   # 재사용 가능한 공통 컴포넌트 (Button, Modal 등)

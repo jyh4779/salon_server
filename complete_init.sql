@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS SHOPS (
     address VARCHAR(255),
     settlement_bank VARCHAR(50),
     settlement_account VARCHAR(50),
+    open_time TIME DEFAULT '10:00:00',
+    close_time TIME DEFAULT '20:00:00',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES USERS(user_id) ON DELETE CASCADE
 );

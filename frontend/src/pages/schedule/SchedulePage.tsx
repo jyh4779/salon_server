@@ -7,6 +7,8 @@ import DateNavigator from '../../components/schedule/DateNavigator';
 import MainCalendar from '../../components/schedule/MainCalendar';
 import { STRINGS, RESERVATION_STATUS_COLORS } from '../../constants/strings';
 import { useReservations } from '../../hooks/useReservations';
+import NewReservationModal from '../../components/schedule/NewReservationModal';
+import { CreateReservationDTO } from '../../types/reservation';
 
 const { Content } = Layout;
 
@@ -17,6 +19,9 @@ const SchedulePage: React.FC = () => {
     // 현재 보고 있는 날짜 상태
     const [currentDate, setCurrentDate] = useState<Date>(new Date());
     const [viewType, setViewType] = useState<string>('timeGridDay');
+
+    // 새 예약 모달 상태
+    const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
 
     const {
         token: { colorBgContainer, borderRadiusLG },
@@ -101,6 +106,16 @@ const SchedulePage: React.FC = () => {
         }
     };
 
+    // 새 예약 모달 핸들러
+    const handleOpenModal = () => setIsReservationModalOpen(true);
+    const handleCloseModal = () => setIsReservationModalOpen(false);
+
+    // 예약 생성 핸들러 (API 연동 전 임시 로그)
+    const handleCreateReservation = (data: CreateReservationDTO) => {
+        console.log('New Reservation Data:', data);
+        // TODO: API 호출 및 리스트 갱신
+    };
+
     return (
         <Content>
             <Flex vertical gap="large" style={{ height: '100%' }}>
@@ -132,11 +147,12 @@ const SchedulePage: React.FC = () => {
                         onPrev={handlePrev}
                         onNext={handleNext}
                         onToday={handleToday}
+                        viewType={viewType}
                     />
 
                     {/* 우측 새 예약 버튼 (F-SCH-003 미리보기) */}
                     <div style={{ width: 100, textAlign: 'right' }}>
-                        <Button type="primary" icon={<PlusOutlined />}>
+                        <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenModal}>
                             {STRINGS.SCHEDULE.NEW_RESERVATION}
                         </Button>
                     </div>
@@ -157,6 +173,12 @@ const SchedulePage: React.FC = () => {
                     />
                 </div>
             </Flex>
+
+            <NewReservationModal
+                isOpen={isReservationModalOpen}
+                onClose={handleCloseModal}
+                onSubmit={handleCreateReservation}
+            />
         </Content>
     );
 };

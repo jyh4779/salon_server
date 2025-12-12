@@ -5,7 +5,7 @@ export interface ReservationDTO {
     designer_id: number;
     start_time: string;
     end_time: string;
-    status: string; // 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELED' | 'NOSHOW'
+    status: ReservationStatus;
     request_memo?: string;
     alarm_enabled?: boolean;
     created_at?: string;
@@ -23,4 +23,20 @@ export interface ReservationDTO {
 export interface GetReservationsParams {
     startDate: string;
     endDate: string;
+}
+
+export type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELED' | 'NOSHOW';
+
+export interface CreateReservationDTO {
+    shop_id: number;
+    customer_id?: number;
+    customer_name?: string;
+    customer_phone?: string;
+    designer_id: number;
+    start_time: string;
+    end_time: string;
+    status: ReservationStatus;
+    request_memo?: string;
+    alarm_enabled?: boolean;
+    treatment_id?: number;
 }

@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import databaseConfig from './config/database.config';
-import { PrismaService } from './prisma/prisma.service';
+import { PrismaModule } from './prisma/prisma.module';
 import { ReservationsModule } from './reservations/reservations.module';
+import { UsersModule } from './users/users.module';
+import { DesignersModule } from './designers/designers.module';
+import { MenusModule } from './menus/menus.module';
 
 @Module({
     imports: [
@@ -10,8 +13,12 @@ import { ReservationsModule } from './reservations/reservations.module';
             isGlobal: true,
             load: [databaseConfig],
         }),
+        PrismaModule,
         ReservationsModule,
+        UsersModule,
+        DesignersModule,
+        MenusModule,
     ],
-    providers: [PrismaService],
+    providers: [],
 })
 export class AppModule { }

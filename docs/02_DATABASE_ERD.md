@@ -46,6 +46,8 @@ erDiagram
         string address "매장 주소"
         string settlement_bank "정산 은행"
         string settlement_account "정산 계좌"
+        time open_time "오픈 시간 (Default 10:00)"
+        time close_time "마감 시간 (Default 20:00)"
     }
     
     MENUS {

@@ -13,6 +13,7 @@ interface DateNavigatorProps {
     onPrev: () => void;
     onNext: () => void;
     onToday: () => void; // 오늘 날짜로 이동하는 함수
+    viewType: string;
 }
 
 /**
@@ -22,7 +23,25 @@ interface DateNavigatorProps {
  * 캘린더 상단에서 날짜를 이전/다음으로 이동하고 현재 날짜를 표시하는 네비게이션바입니다.
  * STRINGS 상수를 철저히 사용합니다.
  */
-const DateNavigator: React.FC<DateNavigatorProps> = ({ currentDate, onPrev, onNext, onToday }) => {
+const DateNavigator: React.FC<DateNavigatorProps> = ({ currentDate, onPrev, onNext, onToday, viewType }) => {
+    // 날짜 텍스트 계산
+    const getDateText = () => {
+        if (viewType === 'timeGridWeek') {
+            const start = dayjs(currentDate).startOf('week');
+            const end = dayjs(currentDate).endOf('week');
+            return `${start.format('MM월 DD일')} ~ ${end.format('MM월 DD일')}`;
+        }
+        return dayjs(currentDate).format(STRINGS.SCHEDULE.DATE_FORMAT);
+    };
+
+    // 버튼 텍스트 계산
+    const getButtonText = () => {
+        if (viewType === 'timeGridWeek') {
+            return STRINGS.SCHEDULE.CALENDAR.THIS_WEEK;
+        }
+        return STRINGS.SCHEDULE.CALENDAR.TODAY;
+    };
+
     return (
         <Space align="center" size="middle">
             <Button
@@ -32,7 +51,7 @@ const DateNavigator: React.FC<DateNavigatorProps> = ({ currentDate, onPrev, onNe
             />
 
             <Typography.Title level={4} style={{ margin: 0, minWidth: 200, textAlign: 'center', cursor: 'pointer' }}>
-                {dayjs(currentDate).format(STRINGS.SCHEDULE.DATE_FORMAT)}
+                {getDateText()}
             </Typography.Title>
 
             <Button
@@ -42,7 +61,7 @@ const DateNavigator: React.FC<DateNavigatorProps> = ({ currentDate, onPrev, onNe
             />
 
             <Button onClick={onToday}>
-                {STRINGS.SCHEDULE.CALENDAR.TODAY}
+                {getButtonText()}
             </Button>
         </Space>
     );

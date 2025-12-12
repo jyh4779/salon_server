@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ReservationDTO, GetReservationsParams } from '../types/reservation';
+import { ReservationDTO, GetReservationsParams, CreateReservationDTO } from '../types/reservation';
 
 // Base URL from environment variable
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
@@ -9,4 +9,8 @@ export const getReservations = async (params: GetReservationsParams): Promise<Re
         params,
     });
     return response.data;
+};
+
+export const createReservation = async (data: CreateReservationDTO): Promise<void> => {
+    await axios.post(`${API_BASE_URL}/reservations`, data);
 };

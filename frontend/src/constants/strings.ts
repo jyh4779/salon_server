@@ -18,7 +18,7 @@ export const STRINGS = {
     SCHEDULE: {
         TITLE: '일정 관리',
         NEW_RESERVATION: '새 예약',
-        DATE_FORMAT: 'YYYY년 MM월 DD일 (ddd)',
+        DATE_FORMAT: 'MM월 DD일 (ddd)',
         CALENDAR: {
             TODAY: '오늘',
             MONTH: '월',
@@ -28,10 +28,23 @@ export const STRINGS = {
             NEXT: '다음',
             VIEW_DAY: '일일',
             VIEW_WEEK: '주간',
+            THIS_WEEK: '이번주',
         },
         // F-SCH-002 등 향후 확장을 위한 키
         STATUSED_PENDING: '예약 대기',
         STATUSED_CONFIRMED: '예약 확정',
+        NEW_RESERVATION_MODAL: {
+            TITLE: '새 예약 추가',
+            CUSTOMER_LABEL: '고객명/연락처',
+            CUSTOMER_PLACEHOLDER: '고객 검색 또는 입력',
+            DATE_LABEL: '예약 날짜',
+            TIME_LABEL: '예약 시간',
+            TREATMENT_LABEL: '시술 메뉴',
+            DESIGNER_LABEL: '담당 디자이너',
+            STATUS_LABEL: '예약 상태',
+            MEMO_LABEL: '메모',
+            ALARM_LABEL: '알림 발송',
+        },
     },
     CLIENT: {
         TITLE: '고객 관리',
