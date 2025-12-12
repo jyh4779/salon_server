@@ -1,0 +1,21 @@
+export const COLORS = {
+    PRIMARY: '#1677ff', // Ant Design Default Blue
+    SUCCESS: '#52c41a',
+    WARNING: '#faad14',
+    ERROR: '#ff4d4f',
+
+    // 예약 상태 (Reservation Status)
+    STATUS: {
+        PENDING: '#faad14',   // 대기
+        CONFIRMED: '#1677ff', // 확정
+        TREATING: '#722ed1',  // 시술중
+        COMPLETED: '#8c8c8c', // 완료 (Gray)
+        CANCELED: '#d9d9d9',  // 취소
+        NOSHOW: '#ff4d4f',    // 노쇼 (Red)
+    },
+
+    TEXT: {
+        PRIMARY: '#000000',
+        SECONDARY: 'rgba(0, 0, 0, 0.45)',
+    }
+};
