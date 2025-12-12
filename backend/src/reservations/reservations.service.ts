@@ -1,41 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { GetReservationsDto } from './dto/get-reservations.dto';
+import * as dayjs from 'dayjs';
+import * as utc from 'dayjs/plugin/utc';
+import * as timezone from 'dayjs/plugin/timezone';
+import { ReservationsRepository } from './reservations.repository';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 @Injectable()
 export class ReservationsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private reservationsRepository: ReservationsRepository) { }
 
     async findAll(query: GetReservationsDto) {
         const { startDate, endDate } = query;
 
-        return this.prisma.rESERVATIONS.findMany({
-            where: {
-                start_time: {
-                    gte: new Date(startDate),
-                    lte: new Date(endDate),
-                },
-            },
-            include: {
-                USERS: {
-                    select: {
-                        name: true,
-                        phone: true
-                    }
-                },
-                DESIGNERS: {
-                    include: {
-                        USERS: {
-                            select: {
-                                name: true
-                            }
-                        }
-                    }
-                }
-            },
-            orderBy: {
-                start_time: 'asc',
-            },
-        });
+        const reservations = await this.reservationsRepository.getReservations(startDate, endDate);
+
+        return reservations.map(reservation => ({
+            ...reservation,
+            start_time: dayjs(reservation.start_time).tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ss+09:00'),
+            end_time: dayjs(reservation.end_time).tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ss+09:00'),
+        }));
     }
 }

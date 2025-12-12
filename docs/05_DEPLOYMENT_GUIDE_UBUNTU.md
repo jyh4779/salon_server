@@ -85,4 +85,111 @@ pm2 startup
 - **서버 중지:** `pm2 stop salon-api`
 - **서버 재시작:** `pm2 restart salon-api` (코드 업데이트 후 필수)
 - **서버 삭제:** `pm2 delete salon-api`
-- **모니터링:** `pm2 monit`
+
+## 7. 방화벽 설정 (Firewall)
+서버 외부에서 포트 3000번에 접근할 수 있도록 방화벽을 열어주어야 합니다.
+
+### Case A: UFW 사용 시 (일반적인 Ubuntu)
+```bash
+# 3000번 포트 허용
+sudo ufw allow 3000/tcp
+
+# 설정 확인
+sudo ufw status
+```
+
+### Case B: iptables 사용 시 (Oracle Cloud 등)
+Oracle Cloud의 Ubuntu 이미지는 기본적으로 iptables가 엄격하게 설정되어 있습니다.
+
+```bash
+# iptables 규칙 추가 (재부팅 시 초기화될 수 있음)
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 3000 -j ACCEPT
+
+# 규칙 영구 저장 (netfilter-persistent 사용 시)
+sudo netfilter-persistent save
+```
+
+### Case C: 클라우드 보안 그룹 (Security Group)
+- AWS, Azure, Oracle Cloud 등을 사용하는 경우, **클라우드 콘솔 웹사이트**에서도 3000번 포트(Ingress Rule)를 열어주어야 합니다.
+
+
+## 8. 프론트엔드 배포 (Nginx 설치 및 설정)
+프론트엔드와 백엔드가 한 서버에 있다면, **Nginx**를 사용하여 프론트엔드 정적 파일을 제공하고 백엔드 API를 연결하는 것이 정석입니다.
+
+### 8.1. Nginx 설치
+```bash
+sudo apt install -y nginx
+sudo systemctl start nginx
+sudo systemctl enable nginx
+```
+
+### 8.2. 프론트엔드 빌드 및 업로드
+로컬 개발 환경(Windows)에서 프론트엔드를 빌드하여 결과물을 만듭니다.
+
+1. **로컬**에서 빌드 실행:
+    ```bash
+    # 프로젝트 루트에서 실행
+    yarn build
+    ```
+2. 생성된 `dist` 폴더를 서버로 업로드:
+    ```bash
+    # (예시: SCP 사용 시)
+    scp -r dist ubuntu@<SERVER_IP>:~/salon-manager/frontend-dist
+    ```
+    *또는 FTP(FileZilla 등)를 사용하여 `~/salon-manager/frontend-dist` 경로에 업로드하세요.*
+
+### 8.3. Nginx 설정 파일 작성
+기본 설정을 덮어쓰거나 새로운 설정 파일을 만듭니다.
+
+```bash
+# 1. 설정 파일 생성
+sudo nano /etc/nginx/sites-available/salon-manager
+
+# 2. 아래 내용 붙여넣기
+server {
+    listen 80;
+    server_name _;  # 도메인이 있다면 도메인 입력 (예: example.com)
+
+    # 1) 프론트엔드 (정적 파일)
+    location / {
+        root /home/ubuntu/salon-manager/frontend-dist;
+        index index.html;
+        try_files $uri $uri/ /index.html;  # React Router 새로고침 문제 해결
+    }
+
+    # 2) 백엔드 API (Reverse Proxy)
+    # /api 로 시작하는 요청을 3000번 포트로 전달
+    location /api/ {
+        proxy_pass http://localhost:3000/; # 중요: 끝에 / 붙임
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+*주의: `root` 경로는 실제 `frontend-dist` 폴더가 있는 절대 경로여야 합니다. (`pwd` 명령어로 확인)*
+
+### 8.4. 설정 적용 및 방화벽 해제
+```bash
+# 1. 사이트 활성화 (심볼릭 링크)
+sudo ln -s /etc/nginx/sites-available/salon-manager /etc/nginx/sites-enabled/
+
+# 2. 기본 설정 비활성화 (충돌 방지)
+sudo rm /etc/nginx/sites-enabled/default
+
+# 3. 설정 문법 검사
+sudo nginx -t
+
+# 4. Nginx 재시작
+sudo systemctl restart nginx
+
+# 5. 방화벽 80번 포트(HTTP) 허용
+sudo ufw allow 80/tcp
+# Oracle Cloud 사용 시 iptables 규칙 추가 필요 (3000번과 동일한 방식)
+sudo iptables -I INPUT 5 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+sudo netfilter-persistent save
+```
+
+이제 브라우저 주소창에 `http://<SERVER_IP>`를 입력하면 프론트엔드 화면이 나와야 합니다.
