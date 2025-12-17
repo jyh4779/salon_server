@@ -9,6 +9,7 @@ import { MenusModule } from './menus/menus.module';
 import { ShopsModule } from './shops/shops.module';
 import { CustomersModule } from './customers/customers.module';
 import { SalesModule } from './sales/sales.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
     imports: [
@@ -17,16 +18,14 @@ import { SalesModule } from './sales/sales.module';
             load: [databaseConfig],
         }),
         PrismaModule,
-        ReservationsModule,
         UsersModule,
-        DesignersModule,
-        MenusModule,
         ShopsModule,
         DesignersModule,
         MenusModule,
-        ShopsModule,
+        ReservationsModule,
         CustomersModule,
         SalesModule,
+        AuthModule,
     ],
     providers: [],
 })

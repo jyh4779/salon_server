@@ -9,31 +9,34 @@ datasource db {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model CUSTOMER_MEMOS {
-  memo_id    BigInt    @id @default(autoincrement())
-  user_id    BigInt
-  writer_id  BigInt
-  shop_id    BigInt
-  content    String    @db.Text
-  tags       String?   @db.VarChar(255)
-  created_at DateTime? @default(now()) @db.DateTime(0)
+  memo_id     BigInt    @id @default(autoincrement())
+  user_id     BigInt
+  writer_id   BigInt
+  shop_id     BigInt
+  content     String    @db.Text
+  tags        String?   @db.VarChar(255)
+  created_at  DateTime? @default(now()) @db.DateTime(0)
+  SHOPS       SHOPS     @relation(fields: [shop_id], references: [shop_id], onDelete: Cascade, onUpdate: Restrict)
   target_user USERS     @relation("TargetUserMemos", fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict)
   writer      USERS     @relation("WriterMemos", fields: [writer_id], references: [user_id], onUpdate: Restrict)
-  SHOPS      SHOPS     @relation(fields: [shop_id], references: [shop_id], onDelete: Cascade, onUpdate: Restrict)
 
   @@index([shop_id], map: "shop_id")
   @@index([user_id], map: "user_id")
-  @@index([writer_id], map: "writer_id")
+  @@index([writer_id], map: "CUSTOMER_MEMOS_writer_id_fkey")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model DESIGNERS {
   designer_id     BigInt            @id @default(autoincrement())
-  user_id         BigInt            @unique(map: "user_id")
+  user_id         BigInt            // Removed @unique to allow multi-shop designers
   shop_id         BigInt
   intro_text      String?           @db.Text
   profile_img     String?           @db.VarChar(255)
   work_start      DateTime?         @db.Time(0)
   work_end        DateTime?         @db.Time(0)
+  lunch_start     DateTime?         @db.Time(0)
+  lunch_end       DateTime?         @db.Time(0)
+  day_off         String?           @db.VarChar(50)
   is_active       Boolean?          @default(true)
   USERS           USERS             @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict)
   SHOPS           SHOPS             @relation(fields: [shop_id], references: [shop_id], onUpdate: Restrict)
@@ -41,13 +44,14 @@ model DESIGNERS {
   SCHEDULE_BLOCKS SCHEDULE_BLOCKS[]
   VISIT_LOGS      VISIT_LOGS[]
 
-  @@index([shop_id], map: "shop_id")
+  @@index([shop_id], map: "DESIGNERS_shop_id_fkey")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model MENUS {
   menu_id           BigInt              @id @default(autoincrement())
   shop_id           BigInt
+  category          String?             @db.VarChar(50)
   name              String              @db.VarChar(100)
   price             Int                 @default(0)
   duration          Int                 @default(60)
@@ -56,7 +60,7 @@ model MENUS {
   SHOPS             SHOPS               @relation(fields: [shop_id], references: [shop_id], onDelete: Cascade, onUpdate: Restrict)
   RESERVATION_ITEMS RESERVATION_ITEMS[]
 
-  @@index([shop_id], map: "shop_id")
+  @@index([shop_id], map: "MENUS_shop_id_fkey")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -69,7 +73,7 @@ model PAYMENTS {
   paid_at        DateTime?       @default(now()) @db.DateTime(0)
   RESERVATIONS   RESERVATIONS    @relation(fields: [reservation_id], references: [reservation_id], onDelete: Cascade, onUpdate: Restrict)
 
-  @@index([reservation_id], map: "reservation_id")
+  @@index([reservation_id], map: "PAYMENTS_reservation_id_fkey")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -85,15 +89,15 @@ model RESERVATIONS {
   alarm_enabled     Boolean?            @default(true)
   created_at        DateTime?           @default(now()) @db.DateTime(0)
   PAYMENTS          PAYMENTS[]
-  SHOPS             SHOPS               @relation(fields: [shop_id], references: [shop_id], onDelete: Cascade, onUpdate: Restrict)
   USERS             USERS               @relation(fields: [customer_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict)
   DESIGNERS         DESIGNERS           @relation(fields: [designer_id], references: [designer_id], onDelete: Cascade, onUpdate: Restrict)
+  SHOPS             SHOPS               @relation(fields: [shop_id], references: [shop_id], onDelete: Cascade, onUpdate: Restrict)
   RESERVATION_ITEMS RESERVATION_ITEMS[]
   VISIT_LOGS        VISIT_LOGS?
 
-  @@index([customer_id], map: "customer_id")
-  @@index([designer_id], map: "designer_id")
-  @@index([shop_id], map: "shop_id")
+  @@index([customer_id], map: "RESERVATIONS_customer_id_fkey")
+  @@index([designer_id], map: "RESERVATIONS_designer_id_fkey")
+  @@index([shop_id], map: "RESERVATIONS_shop_id_fkey")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -103,11 +107,11 @@ model RESERVATION_ITEMS {
   menu_id        BigInt?
   menu_name      String       @db.VarChar(100)
   price          Int
-  RESERVATIONS   RESERVATIONS @relation(fields: [reservation_id], references: [reservation_id], onDelete: Cascade, onUpdate: Restrict)
   MENUS          MENUS?       @relation(fields: [menu_id], references: [menu_id], onDelete: Cascade, onUpdate: Restrict)
+  RESERVATIONS   RESERVATIONS @relation(fields: [reservation_id], references: [reservation_id], onDelete: Cascade, onUpdate: Restrict)
 
-  @@index([menu_id], map: "menu_id")
-  @@index([reservation_id], map: "reservation_id")
+  @@index([menu_id], map: "RESERVATION_ITEMS_menu_id_fkey")
+  @@index([reservation_id], map: "RESERVATION_ITEMS_reservation_id_fkey")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -120,7 +124,7 @@ model SCHEDULE_BLOCKS {
   reason      String?              @db.VarChar(255)
   DESIGNERS   DESIGNERS            @relation(fields: [designer_id], references: [designer_id], onDelete: Cascade, onUpdate: Restrict)
 
-  @@index([designer_id], map: "designer_id")
+  @@index([designer_id], map: "SCHEDULE_BLOCKS_designer_id_fkey")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -132,16 +136,17 @@ model SHOPS {
   address            String?          @db.VarChar(255)
   settlement_bank    String?          @db.VarChar(50)
   settlement_account String?          @db.VarChar(50)
-  open_time          DateTime?        @default(dbgenerated("'10:00:00'")) @db.Time(0)
-  close_time         DateTime?        @default(dbgenerated("'20:00:00'")) @db.Time(0)
+  open_time          DateTime?        @default(dbgenerated("('10:00:00')")) @db.Time(0)
+  close_time         DateTime?        @default(dbgenerated("('20:00:00')")) @db.Time(0)
   created_at         DateTime?        @default(now()) @db.DateTime(0)
+  closed_days        String?          @db.VarChar(50)
   CUSTOMER_MEMOS     CUSTOMER_MEMOS[]
   DESIGNERS          DESIGNERS[]
   MENUS              MENUS[]
   RESERVATIONS       RESERVATIONS[]
   USERS              USERS            @relation(fields: [owner_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict)
 
-  @@index([owner_id], map: "owner_id")
+  @@index([owner_id], map: "SHOPS_owner_id_fkey")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -157,10 +162,11 @@ model USERS {
   birthdate         String?          @db.VarChar(8)
   is_app_user       Boolean?         @default(false)
   grade             USERS_grade?     @default(NEW)
+  current_hashed_refresh_token String? @db.VarChar(255) // For Refresh Token Rotation
   created_at        DateTime?        @default(now()) @db.DateTime(0)
   target_user_memos CUSTOMER_MEMOS[] @relation("TargetUserMemos")
   writer_memos      CUSTOMER_MEMOS[] @relation("WriterMemos")
-  DESIGNERS         DESIGNERS?
+  DESIGNERS         DESIGNERS[]
   RESERVATIONS      RESERVATIONS[]
   SHOPS             SHOPS[]
   VISIT_LOGS        VISIT_LOGS[]
@@ -176,11 +182,11 @@ model VISIT_LOGS {
   photo_urls     String?      @db.LongText
   visited_at     DateTime?    @default(now()) @db.DateTime(0)
   USERS          USERS        @relation(fields: [customer_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict)
-  RESERVATIONS   RESERVATIONS @relation(fields: [reservation_id], references: [reservation_id], onDelete: Cascade, onUpdate: Restrict)
   DESIGNERS      DESIGNERS    @relation(fields: [designer_id], references: [designer_id], onDelete: Cascade, onUpdate: Restrict)
+  RESERVATIONS   RESERVATIONS @relation(fields: [reservation_id], references: [reservation_id], onDelete: Cascade, onUpdate: Restrict)
 
-  @@index([customer_id], map: "customer_id")
-  @@index([designer_id], map: "designer_id")
+  @@index([customer_id], map: "VISIT_LOGS_customer_id_fkey")
+  @@index([designer_id], map: "VISIT_LOGS_designer_id_fkey")
 }
 
 enum PAYMENTS_type {

@@ -11,13 +11,18 @@ export interface ShopDTO {
     address?: string;
     settlement_bank?: string;
     settlement_account?: string;
-    open_time?: string; // HH:mm:ss string from DB Time type
+    open_time?: string; // HH:mm
     close_time?: string;
+    closed_days?: string; // "Mon,Tue"
     created_at?: string;
 }
 
 export const getShop = async (id: number = 1): Promise<ShopDTO> => {
     const response = await axios.get(`${API_BASE_URL}/shops/${id}`);
-    console.log(`[Frontend] API getShop(${id}) response:`, response.data);
+    return response.data;
+};
+
+export const updateShop = async (id: number = 1, data: Partial<ShopDTO>): Promise<ShopDTO> => {
+    const response = await axios.patch(`${API_BASE_URL}/shops/${id}`, data);
     return response.data;
 };

@@ -7,8 +7,12 @@ import { ValidationPipe } from '@nestjs/common';
     return Number(this);
 };
 
+import * as cookieParser from 'cookie-parser';
+
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
+
+    app.use(cookieParser());
 
     // Enable ValidationPipe for DTO validation and transformation
     app.useGlobalPipes(new ValidationPipe({
@@ -18,7 +22,10 @@ async function bootstrap() {
     }));
 
     // CORS enable (Frontend is running on different port)
-    app.enableCors();
+    app.enableCors({
+        origin: true, // Allow all for dev, or specify frontend URL
+        credentials: true, // Allow cookies
+    });
     await app.listen(3000);
     console.log(`Application is running on: ${await app.getUrl()}`);
 }

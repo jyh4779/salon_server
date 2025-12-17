@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { USERS_role } from '@prisma/client';
+import { USERS_role, USERS } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -13,6 +14,7 @@ export class UsersService {
         const newUser = await this.prisma.uSERS.create({
             data: {
                 ...userData,
+                password: userData.password ? await bcrypt.hash(userData.password, 10) : undefined,
                 role: USERS_role.CUSTOMER,
                 grade: 'NEW',
             },
@@ -55,6 +57,46 @@ export class UsersService {
             take: 20, // 검색 결과 제한
             orderBy: {
                 name: 'asc',
+            },
+        });
+    }
+
+    async findByEmail(email: string): Promise<USERS | undefined> {
+        return this.prisma.uSERS.findUnique({
+            where: { email },
+        });
+    }
+
+    async setCurrentRefreshToken(refreshToken: string, userId: number) {
+        const currentHashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+        await this.prisma.uSERS.update({
+            where: { user_id: BigInt(userId) },
+            data: {
+                current_hashed_refresh_token: currentHashedRefreshToken,
+            },
+        });
+    }
+
+    async getUserIfRefreshTokenMatching(refreshToken: string, userId: number): Promise<USERS | null> {
+        const user = await this.prisma.uSERS.findUnique({
+            where: { user_id: BigInt(userId) },
+        });
+
+        if (!user || !user.current_hashed_refresh_token) return null;
+
+        const isMatching = await bcrypt.compare(refreshToken, user.current_hashed_refresh_token);
+
+        if (isMatching) {
+            return user;
+        }
+        return null;
+    }
+
+    async removeRefreshToken(userId: number) {
+        return this.prisma.uSERS.update({
+            where: { user_id: BigInt(userId) },
+            data: {
+                current_hashed_refresh_token: null,
             },
         });
     }

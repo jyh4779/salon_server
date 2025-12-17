@@ -140,8 +140,17 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
             const dateStr = values.date.format('YYYY-MM-DD');
             const timeStr = values.time.format('HH:mm:00');
             const start_time = `${dateStr}T${timeStr}`;
-            // 종료 시간은 임시로 1시간 뒤로 설정 (추후 시술 메뉴에 따라 계산)
-            const end_time = dayjs(start_time).add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss');
+
+
+            // Calculate end_time based on selected menu duration
+            let duration = 60; // Default 1 hour
+            if (values.treatmentId) {
+                const selectedMenu = menus.find(m => m.menu_id === values.treatmentId);
+                if (selectedMenu && selectedMenu.duration) {
+                    duration = selectedMenu.duration;
+                }
+            }
+            const end_time = dayjs(start_time).add(duration, 'minute').format('YYYY-MM-DDTHH:mm:ss');
 
             const reservationData: CreateReservationDTO = {
                 shop_id: 1, // Default Shop ID
@@ -153,7 +162,7 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
                 status: values.status,
                 request_memo: values.memo,
                 alarm_enabled: values.alarm,
-                treatment_id: values.treatmentId,
+                treatment_id: values.treatmentId ? Number(values.treatmentId) : undefined,
             };
 
             const submitReservation = async () => {
