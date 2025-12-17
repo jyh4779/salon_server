@@ -30,7 +30,8 @@ export class ReservationsRepository {
                             }
                         }
                     }
-                }
+                },
+                RESERVATION_ITEMS: true,
             },
             orderBy: {
                 start_time: 'asc',

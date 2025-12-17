@@ -6,6 +6,7 @@ import { ReservationsModule } from './reservations/reservations.module';
 import { UsersModule } from './users/users.module';
 import { DesignersModule } from './designers/designers.module';
 import { MenusModule } from './menus/menus.module';
+import { ShopsModule } from './shops/shops.module';
 
 @Module({
     imports: [
@@ -18,6 +19,7 @@ import { MenusModule } from './menus/menus.module';
         UsersModule,
         DesignersModule,
         MenusModule,
+        ShopsModule,
     ],
     providers: [],
 })

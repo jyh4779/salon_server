@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, DatePicker, TimePicker, Select, Switch, Space, Spin, message } from 'antd';
+import { Modal, Form, DatePicker, TimePicker, Button, Select, Input, Switch, Space, message, Flex, Spin } from 'antd';
+import { PlusOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { CreateReservationDTO, ReservationStatus } from '../../types/reservation';
 import { STRINGS } from '../../constants/strings';
@@ -7,7 +8,9 @@ import { searchUsers, UserDTO } from '../../api/user';
 import { getDesigners, DesignerDTO } from '../../api/designer';
 import { getMenus, MenuDTO } from '../../api/menu';
 import { createReservation } from '../../api/reservations';
+import { getShop, ShopDTO } from '../../api/shops';
 import { debounce } from 'lodash';
+import NewCustomerModal from '../common/NewCustomerModal';
 
 interface NewReservationModalProps {
     isOpen: boolean;
@@ -26,18 +29,22 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
     // 데이터 상태
     const [designers, setDesigners] = useState<DesignerDTO[]>([]);
     const [menus, setMenus] = useState<MenuDTO[]>([]);
+    const [shop, setShop] = useState<ShopDTO | null>(null);
 
     // 초기 데이터 로드
     React.useEffect(() => {
         if (isOpen) {
             const fetchData = async () => {
                 try {
-                    const [loadedDesigners, loadedMenus] = await Promise.all([
+                    const [loadedDesigners, loadedMenus, loadedShop] = await Promise.all([
                         getDesigners(),
-                        getMenus()
+                        getMenus(),
+                        getShop(1) // Default Shop ID 1
                     ]);
                     setDesigners(loadedDesigners);
                     setMenus(loadedMenus);
+                    setShop(loadedShop);
+                    console.log('[Frontend] NewReservationModal shop loaded:', loadedShop);
                 } catch (error) {
                     console.error('Failed to load initial data:', error);
                 }
@@ -46,9 +53,66 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
         }
     }, [isOpen]);
 
-    // 고객 검색 상태
+    // 시간 제한 로직
+    const disabledTime = (_current: dayjs.Dayjs) => {
+        // 기본값: 10:00 ~ 20:00 (데이터 없을 시)
+        let openHour = 10;
+        let closeHour = 20;
+
+        if (shop && shop.open_time && shop.close_time) {
+            console.log('[Frontend] Computing disabledTime with:', shop.open_time, shop.close_time);
+            // Parse string directly to avoid timezone shifts (e.g. "1970...T10:00...Z" should be 10, not 19 KST)
+            // We assume the DB stores the "intended local time" as UTC or plain ISO string.
+            try {
+                const openTimeStr = shop.open_time.split('T')[1] || shop.open_time;
+                const closeTimeStr = shop.close_time.split('T')[1] || shop.close_time;
+
+                openHour = parseInt(openTimeStr.split(':')[0], 10);
+                closeHour = parseInt(closeTimeStr.split(':')[0], 10);
+            } catch (e) {
+                console.error('[Frontend] Failed to parse shop hours:', e);
+                // Fallback handled by initialization (10, 20)
+            }
+        } else {
+            console.log('[Frontend] disabledTime using default fallback (10-20) because shop data is missing:', shop);
+        }
+
+        return {
+            disabledHours: () => {
+                const hours = [];
+                for (let i = 0; i < 24; i++) {
+                    if (i < openHour || i >= closeHour) {
+                        hours.push(i);
+                    }
+                }
+                return hours;
+            },
+        };
+    };
+    const [alarm, setAlarm] = useState(true);
+
+    // 신규 고객 모달 상태
+    const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+
+    // 고객 검색 관련
     const [userOptions, setUserOptions] = useState<UserDTO[]>([]);
-    const [fetchingUsers, setFetchingUsers] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+
+    // 신규 고객 등록 성공 핸들러
+    const handleNewCustomerSuccess = (newUser: UserDTO) => {
+        // 옵션 목록에 추가하고 선택 상태로 변경
+        setUserOptions([newUser]);
+        form.setFieldsValue({
+            customer_id: newUser.user_id, // value
+            customer_label: `${newUser.name} (${newUser.phone})` // label (if needed for display logic, distinct from value)
+        });
+
+        // AntD Select의 경우, 옵션이 있어야 value가 매핑되어 보임.
+        // 하지만 Select의 'options' prop이 검색 결과에 의존하므로, 
+        // 강제로 현재 선택된 값을 위한 옵션을 만들어줘야 함.
+        // Select 컴포넌트에 value={customerId} 만 주면 option이 없어서 안보일 수 있음.
+        // 따라서 options state를 업데이트 해주는 것이 핵심.
+    };
 
     // Debounced Search Handler
     const handleSearchUser = debounce(async (value: string) => {
@@ -57,14 +121,14 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
             return;
         }
 
-        setFetchingUsers(true);
+        setIsSearching(true);
         try {
             const results = await searchUsers(value);
             setUserOptions(results);
         } catch (error) {
             console.error('User search failed:', error);
         } finally {
-            setFetchingUsers(false);
+            setIsSearching(false);
         }
     }, 500);
 
@@ -82,7 +146,7 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
 
             const reservationData: CreateReservationDTO = {
                 shop_id: 1, // Default Shop ID
-                customer_id: selectedUser ? Number(selectedUser.user_id) : Number(values.customerName),
+                customer_id: Number(values.customer_id),
                 // customer_name/phone removed as backend handles lookup by ID
                 designer_id: Number(values.designerId),
                 start_time: start_time,
@@ -134,137 +198,142 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
     };
 
     return (
-        <Modal
-            title={stringSet.TITLE}
-            open={isOpen}
-            onOk={handleOk}
-            onCancel={handleCancel}
-            confirmLoading={loading}
-            okText={STRINGS.COMMON.SAVE}
-            cancelText={STRINGS.COMMON.CANCEL}
-        >
-            <Form
-                form={form}
-                layout="vertical"
-                initialValues={{
-                    status: 'CONFIRMED' as ReservationStatus,
-                    date: dayjs(),
-                    alarm: true,
-                }}
+        <>
+            <Modal
+                title={stringSet.TITLE}
+                open={isOpen}
+                onOk={handleOk}
+                onCancel={handleCancel}
+                confirmLoading={loading}
+                okText={STRINGS.COMMON.SAVE}
+                cancelText={STRINGS.COMMON.CANCEL}
             >
-                {/* 고객 정보 */}
-                <Form.Item
-                    label={stringSet.CUSTOMER_LABEL}
-                    name="customerName"
-                    rules={[{ required: true, message: '고객명을 입력해주세요.' }]}
+                <Form
+                    form={form}
+                    layout="vertical"
+                    initialValues={{
+                        status: 'CONFIRMED' as ReservationStatus,
+                        date: dayjs(),
+                        alarm: true,
+                    }}
                 >
-                    <Select
-                        showSearch
-                        placeholder={stringSet.CUSTOMER_PLACEHOLDER}
-                        filterOption={false}
-                        onSearch={handleSearchUser}
-                        notFoundContent={fetchingUsers ? <Spin size="small" /> : null}
-                        options={userOptions.map(user => ({
-                            label: `${user.name} (${user.phone})`,
-                            value: user.user_id, // 선택 시 ID 저장 (실제로는 name 필드에 매핑 이슈 확인 필요)
-                            // HACK: 백엔드가 name을 받으므로, 여기서는 UI 편의상 ID를 value로 쓰고 submit 시 처리하거나,
-                            // 기획상 "신규/기존" 구분이 필요함. 현재는 검색된 유저 선택 시 이름/전화번호 자동완성 형태로 구현.
-                            user: user // 데이터 참조용
-                        }))}
-                        onSelect={(_, option: any) => {
-                            // 선택된 유저 정보 저장
-                            setSelectedUser(option.user);
-                            // 폼 필드 업데이트 (표시는 Select의 라벨이 담당)
-                            form.setFieldsValue({
-                                customerPhone: option.user.phone
-                            });
-                        }}
-                    />
-                    {/* 숨겨진 필드로 전화번호 관리 또는 추후 UI 분리 */}
-                </Form.Item>
-                <Form.Item name="customerPhone" hidden><Input /></Form.Item>
-
-                {/* 날짜 및 시간 */}
-                <Space style={{ display: 'flex' }} align="baseline">
-                    <Form.Item
-                        label={stringSet.DATE_LABEL}
-                        name="date"
-                        rules={[{ required: true, message: '날짜를 선택해주세요.' }]}
-                    >
-                        <DatePicker format="YYYY-MM-DD" />
+                    {/* 고객명 검색 + 신규 등록 버튼 */}
+                    <Form.Item label={stringSet.CUSTOMER_LABEL} required style={{ marginBottom: 0 }}>
+                        <Flex gap="small">
+                            <Form.Item
+                                name="customer_id"
+                                rules={[{ required: true, message: '고객을 선택해주세요.' }]}
+                                style={{ flex: 1, marginBottom: 24 }}
+                            >
+                                <Select
+                                    showSearch
+                                    placeholder={stringSet.CUSTOMER_PLACEHOLDER}
+                                    defaultActiveFirstOption={false}
+                                    filterOption={false}
+                                    onSearch={handleSearchUser}
+                                    notFoundContent={isSearching ? <Spin size="small" /> : null}
+                                    options={userOptions.map(u => ({
+                                        value: u.user_id,
+                                        label: `${u.name} (${u.phone})`
+                                    }))}
+                                />
+                            </Form.Item>
+                            <Button
+                                icon={<PlusOutlined />}
+                                onClick={() => setIsCustomerModalOpen(true)}
+                            />
+                        </Flex>
                     </Form.Item>
-                    <Form.Item
-                        label={stringSet.TIME_LABEL}
-                        name="time"
-                        rules={[{ required: true, message: '시간을 선택해주세요.' }]}
-                    >
-                        <TimePicker format="HH:mm" minuteStep={10} />
-                    </Form.Item>
-                </Space>
+                    <Form.Item name="customerPhone" hidden><Input /></Form.Item>
 
-                {/* 시술 메뉴 & 디자이너 */}
-                <Space style={{ display: 'flex' }} align="baseline">
+                    {/* 날짜 및 시간 */}
+                    <Space style={{ display: 'flex' }} align="baseline">
+                        <Form.Item
+                            label={stringSet.DATE_LABEL}
+                            name="date"
+                            rules={[{ required: true, message: '날짜를 선택해주세요.' }]}
+                        >
+                            <DatePicker format="YYYY-MM-DD" />
+                        </Form.Item>
+                        <Form.Item
+                            label={stringSet.TIME_LABEL}
+                            name="time"
+                            rules={[{ required: true, message: '시간을 선택해주세요.' }]}
+                        >
+                            <TimePicker format="HH:mm" minuteStep={10} disabledTime={disabledTime} hideDisabledOptions />
+                        </Form.Item>
+                    </Space>
+
+                    {/* 시술 메뉴 & 디자이너 */}
+                    <Space style={{ display: 'flex' }} align="baseline">
+                        <Form.Item
+                            label={stringSet.TREATMENT_LABEL}
+                            name="treatmentId"
+                            // rules={[{ required: true, message: '시술을 선택해주세요.' }]}
+                            style={{ width: 220 }}
+                        >
+                            <Select placeholder="시술 선택">
+                                {menus.map(menu => (
+                                    <Option key={menu.menu_id} value={menu.menu_id}>
+                                        {menu.name} ({menu.price.toLocaleString()}원)
+                                    </Option>
+                                ))}
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item
+                            label={stringSet.DESIGNER_LABEL}
+                            name="designerId"
+                            rules={[{ required: true, message: '디자이너를 선택해주세요.' }]}
+                            style={{ width: 220 }}
+                        >
+                            <Select placeholder="디자이너 선택">
+                                {designers.map(d => (
+                                    <Option key={d.designer_id} value={d.designer_id}>
+                                        {d.USERS.name}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </Form.Item>
+                    </Space>
+
+                    {/* 상태 & 알림 */}
+                    <Space size="large">
+                        <Form.Item
+                            label={stringSet.STATUS_LABEL}
+                            name="status"
+                        >
+                            <Select style={{ width: 120 }}>
+                                <Option value="PENDING">예약 대기</Option>
+                                <Option value="CONFIRMED">예약 확정</Option>
+                            </Select>
+                        </Form.Item>
+                        <Form.Item
+                            label={stringSet.ALARM_LABEL}
+                            name="alarm"
+                            valuePropName="checked"
+                        >
+                            <Switch />
+                        </Form.Item>
+                    </Space>
+
+                    {/* 메모 */}
                     <Form.Item
-                        label={stringSet.TREATMENT_LABEL}
-                        name="treatmentId"
-                        // rules={[{ required: true, message: '시술을 선택해주세요.' }]}
-                        style={{ width: 220 }}
+                        label={stringSet.MEMO_LABEL}
+                        name="memo"
                     >
-                        <Select placeholder="시술 선택">
-                            {menus.map(menu => (
-                                <Option key={menu.menu_id} value={menu.menu_id}>
-                                    {menu.name} ({menu.price.toLocaleString()}원)
-                                </Option>
-                            ))}
-                        </Select>
+                        <Input.TextArea rows={3} />
                     </Form.Item>
 
-                    <Form.Item
-                        label={stringSet.DESIGNER_LABEL}
-                        name="designerId"
-                        rules={[{ required: true, message: '디자이너를 선택해주세요.' }]}
-                        style={{ width: 220 }}
-                    >
-                        <Select placeholder="디자이너 선택">
-                            {designers.map(d => (
-                                <Option key={d.designer_id} value={d.designer_id}>
-                                    {d.USERS.name}
-                                </Option>
-                            ))}
-                        </Select>
-                    </Form.Item>
-                </Space>
+                </Form>
+            </Modal>
 
-                {/* 상태 & 알림 */}
-                <Space size="large">
-                    <Form.Item
-                        label={stringSet.STATUS_LABEL}
-                        name="status"
-                    >
-                        <Select style={{ width: 120 }}>
-                            <Option value="PENDING">예약 대기</Option>
-                            <Option value="CONFIRMED">예약 확정</Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item
-                        label={stringSet.ALARM_LABEL}
-                        name="alarm"
-                        valuePropName="checked"
-                    >
-                        <Switch />
-                    </Form.Item>
-                </Space>
-
-                {/* 메모 */}
-                <Form.Item
-                    label={stringSet.MEMO_LABEL}
-                    name="memo"
-                >
-                    <Input.TextArea rows={3} />
-                </Form.Item>
-
-            </Form>
-        </Modal>
+            <NewCustomerModal
+                isOpen={isCustomerModalOpen}
+                onClose={() => setIsCustomerModalOpen(false)}
+                onSuccess={handleNewCustomerSuccess}
+            />
+        </>
     );
 };
 

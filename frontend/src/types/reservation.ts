@@ -18,6 +18,11 @@ export interface ReservationDTO {
             name: string;
         };
     };
+    RESERVATION_ITEMS: {
+        item_id: number;
+        menu_name: string;
+        price: number;
+    }[];
 }
 
 export interface GetReservationsParams {

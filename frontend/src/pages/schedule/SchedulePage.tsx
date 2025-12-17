@@ -18,7 +18,26 @@ const SchedulePage: React.FC = () => {
 
     // 현재 보고 있는 날짜 상태
     const [currentDate, setCurrentDate] = useState<Date>(new Date());
-    const [viewType, setViewType] = useState<string>('timeGridDay');
+    const [viewType, setViewType] = useState<string>('resourceTimeGridDay');
+
+    // 디자이너 리소스 상태
+    const [designers, setDesigners] = useState<any[]>([]);
+
+    React.useEffect(() => {
+        const fetchDesigners = async () => {
+            try {
+                const { getDesigners } = await import('../../api/designer');
+                const data = await getDesigners();
+                setDesigners(data.map(d => ({
+                    id: d.designer_id.toString(),
+                    title: d.USERS.name
+                })));
+            } catch (error) {
+                console.error('Failed to load designers:', error);
+            }
+        };
+        fetchDesigners();
+    }, []);
 
     // 새 예약 모달 상태
     const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
@@ -47,7 +66,7 @@ const SchedulePage: React.FC = () => {
     }, [currentDate, viewType]);
 
     // 예약 데이터 조회
-    const { data: reservations } = useReservations(queryParams);
+    const { data: reservations, refetch } = useReservations(queryParams);
 
     // FullCalendar Event 변환
     const events = useMemo(() => {
@@ -57,18 +76,23 @@ const SchedulePage: React.FC = () => {
 
             return {
                 id: reservation.reservation_id.toString(),
-                title: `${reservation.USERS.name} (${reservation.DESIGNERS.USERS.name})`,
+                resourceId: reservation.designer_id.toString(),
+                title: viewType === 'resourceTimeGridDay'
+                    ? `${reservation.USERS.name}`
+                    : `${reservation.USERS.name} (${reservation.DESIGNERS.USERS.name})`,
                 start: reservation.start_time,
                 end: reservation.end_time,
                 backgroundColor: statusColor,
                 borderColor: statusColor,
                 extendedProps: {
                     status: reservation.status,
-                    phone: reservation.USERS.phone
+                    phone: reservation.USERS.phone,
+                    menu: reservation.RESERVATION_ITEMS?.[0]?.menu_name || '',
+                    memo: reservation.request_memo || ''
                 }
             };
         });
-    }, [reservations]);
+    }, [reservations, viewType]);
 
     // 이전 날짜로 이동
     const handlePrev = () => {
@@ -110,10 +134,10 @@ const SchedulePage: React.FC = () => {
     const handleOpenModal = () => setIsReservationModalOpen(true);
     const handleCloseModal = () => setIsReservationModalOpen(false);
 
-    // 예약 생성 핸들러 (API 연동 전 임시 로그)
+    // 예약 생성 핸들러
     const handleCreateReservation = (data: CreateReservationDTO) => {
-        console.log('New Reservation Data:', data);
-        // TODO: API 호출 및 리스트 갱신
+        console.log('New Reservation Created, refreshing list...');
+        refetch();
     };
 
     return (
@@ -133,7 +157,7 @@ const SchedulePage: React.FC = () => {
                     <div style={{ width: 140 }}>
                         <Segmented
                             options={[
-                                { label: STRINGS.SCHEDULE.CALENDAR.VIEW_DAY, value: 'timeGridDay' },
+                                { label: STRINGS.SCHEDULE.CALENDAR.VIEW_DAY, value: 'resourceTimeGridDay' },
                                 { label: STRINGS.SCHEDULE.CALENDAR.VIEW_WEEK, value: 'timeGridWeek' },
                             ]}
                             value={viewType}
@@ -169,7 +193,24 @@ const SchedulePage: React.FC = () => {
                     <MainCalendar
                         ref={calendarRef}
                         initialDate={currentDate}
+                        resources={designers}
                         events={events}
+                        eventContent={(eventInfo) => {
+                            const { title, extendedProps } = eventInfo.event;
+                            return (
+                                <div style={{ padding: '2px 4px', overflow: 'hidden' }}>
+                                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{title}</div>
+                                    {extendedProps.menu && (
+                                        <div style={{ fontSize: '12px', marginTop: '2px' }}>✂ {extendedProps.menu}</div>
+                                    )}
+                                    {extendedProps.memo && (
+                                        <div style={{ fontSize: '11px', color: '#fff', opacity: 0.9, marginTop: '2px' }}>
+                                            📝 {extendedProps.memo}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        }}
                     />
                 </div>
             </Flex>

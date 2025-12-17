@@ -3,6 +3,7 @@ import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
 import koLocale from '@fullcalendar/core/locales/ko';
 import { EventInput } from '@fullcalendar/core';
 import styled from 'styled-components';
@@ -19,32 +20,33 @@ const CalendarWrapper = styled.div`
 
 interface MainCalendarProps {
   initialDate?: Date;
-  events?: EventInput[]; // Strict typing using FullCalendar's EventInput
+  events?: EventInput[];
+  resources?: any[]; // Resource Input
+  eventContent?: (arg: any) => JSX.Element;
 }
 
-/**
- * MainCalendar
- * 
- * @description
- * FullCalendar 라이브러리를 사용한 메인 캘린더 컴포넌트입니다.
- * 부모 컴포넌트에서 ref를 통해 API를 제어할 수 있습니다.
- */
-const MainCalendar = forwardRef<FullCalendar, MainCalendarProps>(({ initialDate, events }, ref) => {
+const MainCalendar = forwardRef<FullCalendar, MainCalendarProps>(({ initialDate, events, resources, eventContent }, ref) => {
   return (
     <CalendarWrapper>
       <FullCalendar
         ref={ref}
-        plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
-        initialView="timeGridDay"
+        plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin, resourceTimeGridPlugin]}
+        initialView="resourceTimeGridDay"
         initialDate={initialDate}
         locale={koLocale}
-        headerToolbar={false} // 상단 툴바는 DateNavigator에서 별도 제어하므로 숨김
+        headerToolbar={false}
         slotMinTime="09:00:00"
         slotMaxTime="22:00:00"
         allDaySlot={false}
         nowIndicator={true}
         height="auto"
+        resources={resources}
         events={events}
+        eventContent={eventContent}
+        resourceAreaWidth="0px" // Hide resource column if not needed or adjust
+        // resourceAreaHeaderContent="디자이너"
+        datesAboveResources={true} // 날짜 아래에 리소스 표시 (일반적인 컬럼 뷰)
+        slotEventOverlap={false} // 겹치는 이벤트를 겹치지 않고 나란히 표시 (너비 분할)
       />
     </CalendarWrapper>
   );

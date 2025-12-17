@@ -15,6 +15,8 @@
     "@fullcalendar/daygrid": "^6.0.0",
     "@fullcalendar/interaction": "^6.1.19",
     "@fullcalendar/react": "^6.0.0",
+    "@fullcalendar/resource": "^6.1.19",
+    "@fullcalendar/resource-timegrid": "^6.1.19",
     "@fullcalendar/timegrid": "^6.1.19",
     "@tanstack/react-query": "^5.0.0",
     "antd": "^5.0.0",
