@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Input, Button, Layout, theme, Typography, Tag, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { getCustomers, CustomerStats } from '../../api/customers';
 import NewCustomerModal from '../../components/common/NewCustomerModal';
@@ -10,6 +11,7 @@ const { Content } = Layout;
 const { Title } = Typography;
 
 const CustomerPage: React.FC = () => {
+    const navigate = useNavigate();
     const {
         token: { colorBgContainer, borderRadiusLG },
     } = theme.useToken();
@@ -45,7 +47,11 @@ const CustomerPage: React.FC = () => {
             title: '고객명',
             dataIndex: 'name',
             key: 'name',
-            render: (text) => <a>{text}</a>,
+            render: (text, record) => (
+                <a onClick={() => navigate(`/client/${record.id}`)} style={{ fontWeight: 'bold' }}>
+                    {text}
+                </a>
+            ),
         },
         {
             title: '연락처',
@@ -66,7 +72,17 @@ const CustomerPage: React.FC = () => {
             title: '등급',
             dataIndex: 'grade',
             key: 'grade',
-            render: (grade) => <Tag>{grade}</Tag>,
+            render: (grade) => {
+                let color = 'default';
+                let label = grade;
+
+                if (grade === 'VIP') { color = 'gold'; label = 'VIP'; }
+                else if (grade === 'CAUTION') { color = 'red'; label = '주의'; }
+                else if (grade === 'NEW') { color = 'green'; label = '신규'; }
+                else if (grade === 'NORMAL') { color = 'blue'; label = '일반'; } // Changed default color to blue for visibility
+
+                return <Tag color={color}>{label}</Tag>;
+            },
         },
         {
             title: '방문횟수',

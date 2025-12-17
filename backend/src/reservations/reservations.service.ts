@@ -4,13 +4,14 @@ import * as dayjs from 'dayjs';
 import * as utc from 'dayjs/plugin/utc';
 import * as timezone from 'dayjs/plugin/timezone';
 import { ReservationsRepository } from './reservations.repository';
+import { CompleteReservationDto } from './dto/complete-reservation.dto';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
-import { PrismaService } from '../prisma/prisma.service'; // Need PrismaService to fetch menu or use another service/repository
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ReservationsService {
@@ -20,13 +21,19 @@ export class ReservationsService {
     ) { }
 
     async findAll(query: GetReservationsDto) {
-        // ... existing findAll code ...
+        // Validation handled by DTO + Pipe
         const { startDate, endDate } = query;
 
         const reservations = await this.reservationsRepository.getReservations(startDate, endDate);
 
         return reservations.map(reservation => ({
             ...reservation,
+            // Convert UTC to Asia/Seoul for display/logic if needed, 
+            // but usually Frontend handles display. 
+            // Here just ensuring format is ISO string or specific format.
+            // If DB stores UTC, Prisma returns Date object.
+            // Let's keep it simple: return as is, or format if specifically requested.
+            // Existing code likely did formatting:
             start_time: dayjs(reservation.start_time).tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ss+09:00'),
             end_time: dayjs(reservation.end_time).tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ss+09:00'),
         }));
@@ -61,9 +68,11 @@ export class ReservationsService {
     }
 
     async update(id: number, updateReservationDto: UpdateReservationDto) {
-        // 메뉴 가격/이름 등 변경 시 로직 필요할 수 있음
-        // 지금은 단순히 업데이트
         return this.reservationsRepository.updateReservation(id, updateReservationDto);
+    }
+
+    async complete(id: number, completeReservationDto: CompleteReservationDto) {
+        return this.reservationsRepository.completeReservation(id, completeReservationDto);
     }
 
     async remove(id: number) {

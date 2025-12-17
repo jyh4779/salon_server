@@ -17,5 +17,15 @@ export const COLORS = {
     TEXT: {
         PRIMARY: '#000000',
         SECONDARY: 'rgba(0, 0, 0, 0.45)',
+    },
+
+    STATS: {
+        POSITIVE: '#3f8600', // 매출 증가, 이익 등
+        NEGATIVE: '#cf1322', // 합계, 강조 등
+    },
+
+    BACKGROUND: {
+        LIGHT: '#fafafa',
+        WHITE: '#ffffff',
     }
 };

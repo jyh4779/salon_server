@@ -25,6 +25,16 @@ export const updateReservation = async (id: string, data: Partial<CreateReservat
     await axios.patch(`${API_BASE_URL}/reservations/${id}`, data);
 };
 
+export interface CompleteReservationData {
+    totalPrice: number;
+    paymentType: string;
+    paymentMemo?: string;
+}
+
+export const completeReservation = async (id: string, data: CompleteReservationData): Promise<void> => {
+    await axios.post(`${API_BASE_URL}/reservations/${id}/complete`, data);
+};
+
 export const deleteReservation = async (id: string): Promise<void> => {
     await axios.delete(`${API_BASE_URL}/reservations/${id}`);
 };

@@ -3,8 +3,8 @@ import MainLayout from './layouts/MainLayout';
 
 import SchedulePage from './pages/schedule/SchedulePage';
 import CustomerPage from './pages/customer/CustomerPage';
-
-const SalesPage = () => <div>Sales Page Content</div>;
+import CustomerDetailPage from './pages/customer/CustomerDetailPage';
+import SalesPage from './pages/sales/SalesPage';
 const SettingsPage = () => <div>Settings Page Content</div>;
 
 function App() {
@@ -15,6 +15,7 @@ function App() {
                     <Route index element={<Navigate to="/schedule" replace />} />
                     <Route path="schedule" element={<SchedulePage />} />
                     <Route path="client" element={<CustomerPage />} />
+                    <Route path="client/:id" element={<CustomerDetailPage />} />
                     <Route path="sales" element={<SalesPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                 </Route>

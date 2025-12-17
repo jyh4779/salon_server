@@ -16,8 +16,36 @@ export interface CustomerStats {
     memo: string;
 }
 
-export const getCustomers = async (search?: string) => {
-    const params = search ? { search } : {};
-    const response = await axios.get<CustomerStats[]>(`${API_BASE_URL}/customers`, { params });
+export const getCustomers = async (search?: string): Promise<CustomerStats[]> => {
+    const response = await axios.get(`${API_BASE_URL}/customers`, {
+        params: { search }
+    });
     return response.data;
+};
+
+export interface CustomerDetail extends CustomerStats {
+    history: {
+        id: number;
+        date: string;
+        status: string;
+        menus: string;
+        price: number;
+        designer: string;
+    }[];
+    memos: {
+        id: number;
+        content: string;
+        created_at: string;
+        type: 'RESERVATION' | 'GENERAL';
+        source_id: number | null;
+    }[];
+}
+
+export const getCustomer = async (id: number): Promise<CustomerDetail> => {
+    const response = await axios.get(`${API_BASE_URL}/customers/${id}`);
+    return response.data;
+};
+
+export const createMemo = async (id: number, content: string): Promise<void> => {
+    await axios.post(`${API_BASE_URL}/customers/${id}/memos`, { content });
 };

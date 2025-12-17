@@ -1,18 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Form, Descriptions, message, Popconfirm, Flex, Tag } from 'antd';
-import { ReservationDTO, CreateReservationDTO } from '../../types/reservation';
-import { getReservation, updateReservation, deleteReservation } from '../../api/reservations';
-
-// To avoid complexity, I'll implement a separate form here, reusing logic from NewReservationModal manually for now.
-// Actually, NewReservationModal is strictly for "New".
-// I will implement a similar form inside this modal for "Edit".
-
-import { DatePicker, TimePicker, Select, Input, Switch, InputNumber } from 'antd';
+import { Modal, Button, Form, Descriptions, message, Popconfirm, Flex, Tag, DatePicker, TimePicker, Select, Input, Switch, InputNumber } from 'antd';
 import dayjs from 'dayjs';
+import { ReservationDTO, CreateReservationDTO } from '../../types/reservation';
+import { getReservation, updateReservation, deleteReservation, completeReservation } from '../../api/reservations';
 import { getDesigners } from '../../api/designer';
 import { getMenus } from '../../api/menu';
 import { getShop } from '../../api/shops';
 import { RESERVATION_STATUS_COLORS, STRINGS } from '../../constants/strings';
+import PaymentConfirmationModal from './PaymentConfirmationModal';
 
 interface ReservationDetailModalProps {
     isOpen: boolean;
@@ -30,6 +25,10 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     const [mode, setMode] = useState<'view' | 'edit'>('view');
     const [reservation, setReservation] = useState<ReservationDTO | null>(null);
     const [form] = Form.useForm();
+
+    // Payment Modal State
+    const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+    const [isCompleting, setIsCompleting] = useState(false);
 
     // Data states for Edit Mode
     const [designers, setDesigners] = useState<any[]>([]);
@@ -87,16 +86,24 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
         }
     }, [mode, reservation, form]);
 
-    const handleComplete = async () => {
+    const handleCompleteClick = () => {
+        setIsPaymentOpen(true);
+    };
+
+    const handlePaymentConfirm = async (paymentData: { totalPrice: number; paymentType: string; paymentMemo: string }) => {
         if (!reservationId) return;
+        setIsCompleting(true);
         try {
-            await updateReservation(reservationId, { status: 'COMPLETED' });
-            message.success('시술 완료 처리되었습니다.');
+            await completeReservation(reservationId, paymentData);
+            message.success('시술 및 결제가 완료되었습니다.');
             onUpdate();
+            setIsPaymentOpen(false);
             onClose();
         } catch (e) {
             console.error(e);
-            message.error('시술 완료 처리에 실패했습니다.');
+            message.error('결제 처리에 실패했습니다.');
+        } finally {
+            setIsCompleting(false);
         }
     };
 
@@ -204,7 +211,7 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                         <Button
                             type="primary"
                             style={{ backgroundColor: '#52c41a' }}
-                            onClick={handleComplete}
+                            onClick={handleCompleteClick}
                             disabled={reservation.status === 'COMPLETED'}
                         >
                             ✅ 시술 완료
@@ -280,6 +287,13 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                     </Flex>
                 </Form>
             )}
+            <PaymentConfirmationModal
+                isOpen={isPaymentOpen}
+                onClose={() => setIsPaymentOpen(false)}
+                onConfirm={handlePaymentConfirm}
+                initialPrice={reservation.RESERVATION_ITEMS?.reduce((acc, item) => acc + item.price, 0) || 0}
+                loading={isCompleting}
+            />
         </Modal>
     );
 };
