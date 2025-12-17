@@ -1,0 +1,154 @@
+import React, { useEffect, useState } from 'react';
+import { Table, Input, Button, Layout, theme, Typography, Tag, Space } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { PlusOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import { getCustomers, CustomerStats } from '../../api/customers';
+import NewCustomerModal from '../../components/common/NewCustomerModal';
+
+const { Content } = Layout;
+const { Title } = Typography;
+
+const CustomerPage: React.FC = () => {
+    const {
+        token: { colorBgContainer, borderRadiusLG },
+    } = theme.useToken();
+
+    const [customers, setCustomers] = useState<CustomerStats[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [searchText, setSearchText] = useState('');
+    const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
+
+    const fetchCustomers = async (search?: string) => {
+        setLoading(true);
+        try {
+            const data = await getCustomers(search);
+            setCustomers(data);
+        } catch (error) {
+            console.error('Failed to fetch customers:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCustomers();
+    }, []);
+
+    const handleSearch = (value: string) => {
+        setSearchText(value);
+        fetchCustomers(value);
+    };
+
+    const columns: ColumnsType<CustomerStats> = [
+        {
+            title: '고객명',
+            dataIndex: 'name',
+            key: 'name',
+            render: (text) => <a>{text}</a>,
+        },
+        {
+            title: '연락처',
+            dataIndex: 'phone',
+            key: 'phone',
+        },
+        {
+            title: '성별',
+            dataIndex: 'gender',
+            key: 'gender',
+            render: (gender) => (
+                <Tag color={gender === 'MALE' ? 'blue' : 'magenta'}>
+                    {gender === 'MALE' ? '남' : '여'}
+                </Tag>
+            ),
+        },
+        {
+            title: '등급',
+            dataIndex: 'grade',
+            key: 'grade',
+            render: (grade) => <Tag>{grade}</Tag>,
+        },
+        {
+            title: '방문횟수',
+            dataIndex: 'visit_count',
+            key: 'visit_count',
+            sorter: (a, b) => a.visit_count - b.visit_count,
+            render: (count) => `${count}회`,
+        },
+        {
+            title: '최근 방문일',
+            dataIndex: 'last_visit',
+            key: 'last_visit',
+            sorter: (a, b) => {
+                const dateA = a.last_visit ? new Date(a.last_visit).getTime() : 0;
+                const dateB = b.last_visit ? new Date(b.last_visit).getTime() : 0;
+                return dateA - dateB;
+            },
+            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '-',
+        },
+        {
+            title: '총 결제금액',
+            dataIndex: 'total_pay',
+            key: 'total_pay',
+            sorter: (a, b) => a.total_pay - b.total_pay,
+            render: (price) => `${price.toLocaleString()}원`,
+        },
+        {
+            title: '등록일',
+            dataIndex: 'created_at',
+            key: 'created_at',
+            render: (date) => dayjs(date).format('YYYY-MM-DD'),
+        },
+    ];
+
+    return (
+        <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
+            <div
+                style={{
+                    padding: 24,
+                    minHeight: 360,
+                    background: colorBgContainer,
+                    borderRadius: borderRadiusLG,
+                }}
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <Title level={4} style={{ margin: 0 }}>고객 관리</Title>
+                    <Space>
+                        <Input.Search
+                            placeholder="이름 또는 전화번호 검색"
+                            allowClear
+                            onSearch={handleSearch}
+                            style={{ width: 250 }}
+                        />
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => setIsNewCustomerModalOpen(true)}
+                        >
+                            신규 고객 등록
+                        </Button>
+                    </Space>
+                </div>
+
+                <Table
+                    columns={columns}
+                    dataSource={customers}
+                    rowKey="id"
+                    loading={loading}
+                    pagination={{ pageSize: 10 }}
+                />
+
+                <NewCustomerModal
+                    isOpen={isNewCustomerModalOpen}
+                    onClose={() => setIsNewCustomerModalOpen(false)}
+                    onSuccess={(newCustomer) => {
+                        console.log('New customer created:', newCustomer);
+                        fetchCustomers(searchText); // Refresh list
+                    }}
+                />
+            </div>
+        </Content>
+    );
+};
+
+export default CustomerPage;
