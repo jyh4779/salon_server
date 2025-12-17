@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Form, DatePicker, TimePicker, Button, Select, Input, Switch, Space, message, Flex, Spin } from 'antd';
-import { PlusOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { CreateReservationDTO, ReservationStatus } from '../../types/reservation';
 import { STRINGS } from '../../constants/strings';
@@ -24,7 +24,6 @@ const stringSet = STRINGS.SCHEDULE.NEW_RESERVATION_MODAL;
 const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClose, onSubmit }) => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<UserDTO | null>(null);
 
     // 데이터 상태
     const [designers, setDesigners] = useState<DesignerDTO[]>([]);
@@ -89,7 +88,7 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
             },
         };
     };
-    const [alarm, setAlarm] = useState(true);
+
 
     // 신규 고객 모달 상태
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);

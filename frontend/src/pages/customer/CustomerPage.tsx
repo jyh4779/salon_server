@@ -94,10 +94,19 @@ const CustomerPage: React.FC = () => {
             render: (price) => `${price.toLocaleString()}원`,
         },
         {
-            title: '등록일',
-            dataIndex: 'created_at',
-            key: 'created_at',
-            render: (date) => dayjs(date).format('YYYY-MM-DD'),
+            title: '메모',
+            dataIndex: 'memo',
+            key: 'memo',
+            render: (text) => (
+                <div style={{
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: 200
+                }} title={text}>
+                    {text}
+                </div>
+            ),
         },
     ];
 

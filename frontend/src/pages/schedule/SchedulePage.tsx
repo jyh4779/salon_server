@@ -158,7 +158,7 @@ const SchedulePage: React.FC = () => {
     const handleCloseModal = () => setIsReservationModalOpen(false);
 
     // 예약 생성 핸들러
-    const handleCreateReservation = (data: CreateReservationDTO) => {
+    const handleCreateReservation = (_data: CreateReservationDTO) => {
         console.log('New Reservation Created, refreshing list...');
         refetch();
     };

@@ -29,6 +29,12 @@ export class CustomersService {
                             }
                         }
                     }
+                },
+                target_user_memos: {
+                    orderBy: {
+                        memo_id: 'desc'
+                    },
+                    take: 1
                 }
             },
             orderBy: {
@@ -40,6 +46,7 @@ export class CustomersService {
         // (Prisma doesn't support complex aggregation in findMany cleanly without raw query group by for this specific join structure easily)
         return customers.map(customer => {
             const reservations = customer.RESERVATIONS;
+            const latestMemo = customer.target_user_memos?.[0]?.content || '';
 
             // Filter out canceled/noshow for valid visit counts if needed (Business logic decision)
             // Usually visit count includes completed or confirmed.
@@ -84,7 +91,7 @@ export class CustomersService {
                 visit_count: visitCount,
                 last_visit: lastVisit,
                 total_pay: totalPay,
-                memo: '' // TODO: Link with CUSTOMER_MEMOS if needed
+                memo: latestMemo
             };
         });
     }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Modal, Form, Input, Radio, DatePicker, message } from 'antd';
 import { CreateUserDTO } from '../../types/user';
 import { createUser } from '../../api/user';
-import dayjs from 'dayjs';
+
 
 interface NewCustomerModalProps {
     isOpen: boolean;

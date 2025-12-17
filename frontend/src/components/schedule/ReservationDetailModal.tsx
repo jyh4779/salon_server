@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form, Descriptions, message, Popconfirm, Flex, Tag } from 'antd';
 import { ReservationDTO, CreateReservationDTO } from '../../types/reservation';
 import { getReservation, updateReservation, deleteReservation } from '../../api/reservations';
-import NewReservationModal from './NewReservationModal'; // Reuse form logic if possible, or duplicate for independence
+
 // To avoid complexity, I'll implement a separate form here, reusing logic from NewReservationModal manually for now.
 // Actually, NewReservationModal is strictly for "New".
 // I will implement a similar form inside this modal for "Edit".
@@ -29,7 +29,6 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
 }) => {
     const [mode, setMode] = useState<'view' | 'edit'>('view');
     const [reservation, setReservation] = useState<ReservationDTO | null>(null);
-    const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
 
     // Data states for Edit Mode
@@ -41,15 +40,13 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     useEffect(() => {
         if (isOpen && reservationId) {
             setMode('view');
-            setLoading(true);
             getReservation(reservationId)
                 .then(data => setReservation(data))
                 .catch(err => {
                     console.error(err);
                     message.error('예약 정보를 불러오는데 실패했습니다.');
                     onClose();
-                })
-                .finally(() => setLoading(false));
+                });
         }
     }, [isOpen, reservationId]);
 
@@ -149,7 +146,7 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
         }
     };
 
-    const disabledTime = (current: dayjs.Dayjs) => {
+    const disabledTime = (_current: dayjs.Dayjs) => {
         if (!shop) return {};
         const openHour = shop.open_time ? parseInt(shop.open_time.split(':')[0]) : 10;
         const closeHour = shop.close_time ? parseInt(shop.close_time.split(':')[0]) : 20;

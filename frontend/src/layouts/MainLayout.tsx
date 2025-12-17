@@ -51,7 +51,7 @@ const MainLayout: React.FC = () => {
     const selectedKey = menuItems.find(item => location.pathname.startsWith(item.key))?.key || '/schedule';
 
     return (
-        <Layout style={{ minHeight: '100vh' }}>
+        <Layout style={{ height: '100vh' }}>
             <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
                 <div style={{
                     height: 32,
@@ -77,7 +77,7 @@ const MainLayout: React.FC = () => {
             </Sider>
             <Layout>
                 <Header style={{ padding: 0, background: colorBgContainer }} />
-                <Content style={{ margin: '16px' }}>
+                <Content style={{ margin: '16px', overflowY: 'auto' }}>
                     <div style={{ padding: 24, minHeight: 360, background: colorBgContainer }}>
                         <Outlet />
                     </div>
