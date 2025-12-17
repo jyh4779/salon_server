@@ -38,4 +38,8 @@ export class CreateReservationDto {
     @IsOptional()
     @IsInt()
     treatment_id?: number; // RESERVATION_ITEMS에 저장될 메뉴 ID
+
+    @IsOptional()
+    @IsInt()
+    price?: number; // 메뉴 가격 (직접 입력 가능)
 }

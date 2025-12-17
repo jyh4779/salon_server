@@ -20,6 +20,7 @@ export interface ReservationDTO {
     };
     RESERVATION_ITEMS: {
         item_id: number;
+        menu_id: number; // Added menu_id
         menu_name: string;
         price: number;
     }[];
@@ -44,4 +45,5 @@ export interface CreateReservationDTO {
     request_memo?: string;
     alarm_enabled?: boolean;
     treatment_id?: number;
+    price?: number;
 }

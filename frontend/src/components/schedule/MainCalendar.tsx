@@ -5,7 +5,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
 import koLocale from '@fullcalendar/core/locales/ko';
-import { EventInput } from '@fullcalendar/core';
+import { EventInput, EventClickArg } from '@fullcalendar/core';
 import styled from 'styled-components';
 
 // 스타일드 컴포넌트를 사용하여 캘린더 커스터마이징 (필요 시)
@@ -23,9 +23,10 @@ interface MainCalendarProps {
   events?: EventInput[];
   resources?: any[]; // Resource Input
   eventContent?: (arg: any) => JSX.Element;
+  eventClick?: (arg: EventClickArg) => void;
 }
 
-const MainCalendar = forwardRef<FullCalendar, MainCalendarProps>(({ initialDate, events, resources, eventContent }, ref) => {
+const MainCalendar = forwardRef<FullCalendar, MainCalendarProps>(({ initialDate, events, resources, eventContent, eventClick }, ref) => {
   return (
     <CalendarWrapper>
       <FullCalendar
@@ -43,6 +44,7 @@ const MainCalendar = forwardRef<FullCalendar, MainCalendarProps>(({ initialDate,
         resources={resources}
         events={events}
         eventContent={eventContent}
+        eventClick={eventClick}
         resourceAreaWidth="0px" // Hide resource column if not needed or adjust
         // resourceAreaHeaderContent="디자이너"
         datesAboveResources={true} // 날짜 아래에 리소스 표시 (일반적인 컬럼 뷰)

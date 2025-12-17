@@ -14,3 +14,16 @@ export const getReservations = async (params: GetReservationsParams): Promise<Re
 export const createReservation = async (data: CreateReservationDTO): Promise<void> => {
     await axios.post(`${API_BASE_URL}/reservations`, data);
 };
+
+export const getReservation = async (id: string): Promise<ReservationDTO> => {
+    const response = await axios.get(`${API_BASE_URL}/reservations/${id}`);
+    return response.data;
+};
+
+export const updateReservation = async (id: string, data: Partial<CreateReservationDTO>): Promise<void> => {
+    await axios.patch(`${API_BASE_URL}/reservations/${id}`, data);
+};
+
+export const deleteReservation = async (id: string): Promise<void> => {
+    await axios.delete(`${API_BASE_URL}/reservations/${id}`);
+};

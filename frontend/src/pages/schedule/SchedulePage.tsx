@@ -8,7 +8,9 @@ import MainCalendar from '../../components/schedule/MainCalendar';
 import { STRINGS, RESERVATION_STATUS_COLORS } from '../../constants/strings';
 import { useReservations } from '../../hooks/useReservations';
 import NewReservationModal from '../../components/schedule/NewReservationModal';
+import ReservationDetailModal from '../../components/schedule/ReservationDetailModal';
 import { CreateReservationDTO } from '../../types/reservation';
+import { EventClickArg } from '@fullcalendar/core';
 
 const { Content } = Layout;
 
@@ -41,6 +43,27 @@ const SchedulePage: React.FC = () => {
 
     // 새 예약 모달 상태
     const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
+
+    // 예약 상세 모달 상태
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
+
+    // 예약 클릭 핸들러
+    const handleEventClick = (info: EventClickArg) => {
+        const reservationId = info.event.id;
+        setSelectedReservationId(reservationId);
+        setIsDetailModalOpen(true);
+    };
+
+    const handleCloseDetailModal = () => {
+        setIsDetailModalOpen(false);
+        setSelectedReservationId(null);
+    };
+
+    const handleUpdateReservation = () => {
+        console.log('Reservation Updated/Deleted, refreshing list...');
+        refetch();
+    };
 
     const {
         token: { colorBgContainer, borderRadiusLG },
@@ -211,6 +234,7 @@ const SchedulePage: React.FC = () => {
                                 </div>
                             );
                         }}
+                        eventClick={handleEventClick}
                     />
                 </div>
             </Flex>
@@ -219,6 +243,13 @@ const SchedulePage: React.FC = () => {
                 isOpen={isReservationModalOpen}
                 onClose={handleCloseModal}
                 onSubmit={handleCreateReservation}
+            />
+
+            <ReservationDetailModal
+                isOpen={isDetailModalOpen}
+                reservationId={selectedReservationId}
+                onClose={handleCloseDetailModal}
+                onUpdate={handleUpdateReservation}
             />
         </Content>
     );
