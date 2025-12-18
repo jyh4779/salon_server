@@ -15,15 +15,16 @@ export class AuthController {
 
         const { accessToken, refreshToken, user: userData } = await this.authService.login(user);
 
-        // Explicitly clear legacy cookie path to prevent conflicts
-        res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
-        res.clearCookie('refresh_token', { path: '/auth/refresh' });
-
         // Set Refresh Token Cookie
+        const isProduction = process.env.NODE_ENV === 'production';
         res.cookie('refresh_token', refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            // In Dev (false), we need 'lax' or 'none' but for localhost cross-port, 'lax' is usually fine IF not relying on 3rd party.
+            // But if it fails, 'secure: false' + 'sameSite: lax' works for localhost.
+            // If we access via IP (168...), we might need None + Secure (but Secure requires HTTPS).
+            // Let's try flexible approach: If NOT production, assume strictness can be lowered.
+            secure: isProduction,
+            sameSite: isProduction ? 'strict' : 'lax', // Lax is default, strictly safer.
             path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
@@ -61,14 +62,11 @@ export class AuthController {
         try {
             const { accessToken, refreshToken: newRefreshToken, user } = await this.authService.refresh(refreshToken);
 
-            // Explicitly clear legacy cookie path
-            res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
-            res.clearCookie('refresh_token', { path: '/auth/refresh' });
-
+            const isProduction = process.env.NODE_ENV === 'production';
             res.cookie('refresh_token', newRefreshToken, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
+                secure: isProduction,
+                sameSite: isProduction ? 'strict' : 'lax',
                 path: '/',
                 maxAge: 7 * 24 * 60 * 60 * 1000,
             });

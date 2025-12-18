@@ -47,32 +47,25 @@ export class AuthService {
 
     async refresh(refreshToken: string) {
         try {
-            console.log(`[DEBUG] AuthService.refresh called. Token (last 6): ...${refreshToken.slice(-6)}`);
-
             const payload = this.jwtService.verify(refreshToken, { secret: process.env.JWT_REFRESH_SECRET });
-            console.log(`[DEBUG] Token verified. User ID (sub): ${payload.sub}`);
 
             const user = await this.usersService.getUserIfRefreshTokenMatching(refreshToken, payload.sub);
+
             if (!user) {
-                console.error(`[DEBUG] getUserIfRefreshTokenMatching returned null. Validation failed.`);
                 throw new UnauthorizedException();
             }
-            console.log(`[DEBUG] User found and token matched. Role: ${user.role}`);
 
             // Role Check again just in case
             if (user.role !== USERS_role.ADMIN && user.role !== USERS_role.OWNER) {
-                console.error(`[DEBUG] Invalid role: ${user.role}`);
                 throw new UnauthorizedException('Access denied');
             }
 
             // Rotate tokens
-            console.log(`[DEBUG] Rotating tokens...`);
             const newPayload = { email: user.email, sub: Number(user.user_id), role: user.role };
             const accessToken = this.jwtService.sign(newPayload, { expiresIn: '15m', secret: process.env.JWT_SECRET });
             const newRefreshToken = this.jwtService.sign(newPayload, { expiresIn: '7d', secret: process.env.JWT_REFRESH_SECRET });
 
             await this.usersService.setCurrentRefreshToken(newRefreshToken, Number(user.user_id));
-            console.log(`[DEBUG] Tokens rotated and saved to DB.`);
 
             return {
                 accessToken,
@@ -80,7 +73,6 @@ export class AuthService {
                 user, // Return user info if needed
             };
         } catch (e) {
-            console.error(`[DEBUG] AuthService.refresh Exception: ${e.message}`);
             throw new UnauthorizedException();
         }
     }

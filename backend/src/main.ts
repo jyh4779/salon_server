@@ -26,7 +26,13 @@ async function bootstrap() {
         origin: true, // Allow all for dev, or specify frontend URL
         credentials: true, // Allow cookies
     });
-    await app.listen(3000);
+    await app.listen(3000, '0.0.0.0');
     console.log(`Application is running on: ${await app.getUrl()}`);
+
+    const dbUrl = process.env.DATABASE_URL;
+    if (dbUrl) {
+        // Log only the HOST part to avoid leaking passwords
+        console.log(`[DEBUG] Connecting to DB Host: ${dbUrl.split('@')[1]?.split(':')[0]}`);
+    }
 }
 bootstrap();

@@ -78,30 +78,38 @@ export class UsersService {
     }
 
     async getUserIfRefreshTokenMatching(refreshToken: string, userId: number): Promise<USERS | null> {
-        console.log(`[DEBUG] UsersService.getUserIfRefreshTokenMatching: Searching for User ${userId}`);
-        const user = await this.prisma.uSERS.findUnique({
-            where: { user_id: BigInt(userId) },
-        });
+        // Force fresh read using Raw Query to bypass any potential Prisma caching/stale connection state
+        // Force fresh read using Locking Query (FOR SHARE) to bypass any MySQL MVCC snapshot
+        // This ensures we read the latest committed data even in REPEATABLE READ isolation
+        const users = await this.prisma.$queryRaw<USERS[]>`SELECT * FROM USERS WHERE user_id = ${userId} LOCK IN SHARE MODE`;
+        const user = users[0];
 
-        if (!user) {
-            console.log(`[DEBUG] User not found in DB.`);
-            return null;
-        }
+        if (!user) return null;
+        if (!user.current_hashed_refresh_token) return null;
 
-        if (!user.current_hashed_refresh_token) {
-            console.log(`[DEBUG] No hashed token stored in DB for this user.`);
-            return null;
-        }
-
-        console.log(`[DEBUG] Comparing provided token with stored hash...`);
         const isMatching = await bcrypt.compare(refreshToken, user.current_hashed_refresh_token);
 
+        console.log('--- [IMPOSSIBLE MATCH DEBUG START] ---');
+        console.log(`1. Incoming Token (Last 10): ...${refreshToken.slice(-10)}`);
+        console.log(`2. DB Stored Hash (First 10): ${user.current_hashed_refresh_token.substring(0, 10)}...`);
+        console.log(`3. Compare Result: ${isMatching}`);
+
+        // Sanity Check: Is stored hash actually a hash?
+        const isHash = user.current_hashed_refresh_token.startsWith('$2b$');
+        console.log(`4. Is DB Value a Bcrypt Hash?: ${isHash}`);
+
+        console.log('--- [IMPOSSIBLE MATCH DEBUG END] ---');
+
+        if (!isMatching) {
+            console.log(`[TRAP] User ${userId} Refresh Failed.`);
+        } else {
+            console.log(`[TRAP] User ${userId} Refresh SUCCESS.`);
+        }
+
         if (isMatching) {
-            console.log(`[DEBUG] Token Matched!`);
             return user;
         }
 
-        console.log(`[DEBUG] Token MISMATCH!`);
         return null;
     }
 
