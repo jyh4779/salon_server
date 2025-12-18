@@ -1,28 +1,26 @@
-import axios from 'axios';
+import { api } from './client';
 import { ReservationDTO, GetReservationsParams, CreateReservationDTO } from '../types/reservation';
 
-// Base URL from environment variable
-import { API_BASE_URL } from '../constants/config';
-
+// Base URL is handled by api client instance
 
 export const getReservations = async (params: GetReservationsParams): Promise<ReservationDTO[]> => {
-    const response = await axios.get(`${API_BASE_URL}/reservations`, {
+    const response = await api.get('/reservations', {
         params,
     });
     return response.data;
 };
 
 export const createReservation = async (data: CreateReservationDTO): Promise<void> => {
-    await axios.post(`${API_BASE_URL}/reservations`, data);
+    await api.post('/reservations', data);
 };
 
 export const getReservation = async (id: string): Promise<ReservationDTO> => {
-    const response = await axios.get(`${API_BASE_URL}/reservations/${id}`);
+    const response = await api.get(`/reservations/${id}`);
     return response.data;
 };
 
 export const updateReservation = async (id: string, data: Partial<CreateReservationDTO>): Promise<void> => {
-    await axios.patch(`${API_BASE_URL}/reservations/${id}`, data);
+    await api.patch(`/reservations/${id}`, data);
 };
 
 export interface CompleteReservationData {
@@ -32,9 +30,9 @@ export interface CompleteReservationData {
 }
 
 export const completeReservation = async (id: string, data: CompleteReservationData): Promise<void> => {
-    await axios.post(`${API_BASE_URL}/reservations/${id}/complete`, data);
+    await api.post(`/reservations/${id}/complete`, data);
 };
 
 export const deleteReservation = async (id: string): Promise<void> => {
-    await axios.delete(`${API_BASE_URL}/reservations/${id}`);
+    await api.delete(`/reservations/${id}`);
 };

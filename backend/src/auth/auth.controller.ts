@@ -15,12 +15,16 @@ export class AuthController {
 
         const { accessToken, refreshToken, user: userData } = await this.authService.login(user);
 
+        // Explicitly clear legacy cookie path to prevent conflicts
+        res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
+        res.clearCookie('refresh_token', { path: '/auth/refresh' });
+
         // Set Refresh Token Cookie
         res.cookie('refresh_token', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/api/auth/refresh',
+            sameSite: 'lax',
+            path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
@@ -42,7 +46,7 @@ export class AuthController {
             await this.authService.logout(body.userId);
         }
 
-        res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
+        res.clearCookie('refresh_token', { path: '/' });
         return { message: 'Logged out' };
     }
 
@@ -50,27 +54,37 @@ export class AuthController {
     async refresh(@Request() req, @Res({ passthrough: true }) res: Response) {
         const refreshToken = req.cookies['refresh_token'];
         if (!refreshToken) {
-            throw new UnauthorizedException('Refresh token not found');
+            // Return 200 with null to suppress browser console 401 error
+            return { accessToken: null, user: null };
         }
 
-        const { accessToken, refreshToken: newRefreshToken, user } = await this.authService.refresh(refreshToken);
+        try {
+            const { accessToken, refreshToken: newRefreshToken, user } = await this.authService.refresh(refreshToken);
 
-        res.cookie('refresh_token', newRefreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/api/auth/refresh',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+            // Explicitly clear legacy cookie path
+            res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
+            res.clearCookie('refresh_token', { path: '/auth/refresh' });
 
-        return {
-            accessToken,
-            user: {
-                id: Number(user.user_id),
-                name: user.name,
-                email: user.email,
-                role: user.role,
-            }
-        };
+            res.cookie('refresh_token', newRefreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                path: '/',
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
+
+            return {
+                accessToken,
+                user: {
+                    id: Number(user.user_id),
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                }
+            };
+        } catch (e) {
+            // Token invalid or expired
+            return { accessToken: null, user: null };
+        }
     }
 }

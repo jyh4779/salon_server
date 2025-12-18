@@ -78,17 +78,30 @@ export class UsersService {
     }
 
     async getUserIfRefreshTokenMatching(refreshToken: string, userId: number): Promise<USERS | null> {
+        console.log(`[DEBUG] UsersService.getUserIfRefreshTokenMatching: Searching for User ${userId}`);
         const user = await this.prisma.uSERS.findUnique({
             where: { user_id: BigInt(userId) },
         });
 
-        if (!user || !user.current_hashed_refresh_token) return null;
+        if (!user) {
+            console.log(`[DEBUG] User not found in DB.`);
+            return null;
+        }
 
+        if (!user.current_hashed_refresh_token) {
+            console.log(`[DEBUG] No hashed token stored in DB for this user.`);
+            return null;
+        }
+
+        console.log(`[DEBUG] Comparing provided token with stored hash...`);
         const isMatching = await bcrypt.compare(refreshToken, user.current_hashed_refresh_token);
 
         if (isMatching) {
+            console.log(`[DEBUG] Token Matched!`);
             return user;
         }
+
+        console.log(`[DEBUG] Token MISMATCH!`);
         return null;
     }
 

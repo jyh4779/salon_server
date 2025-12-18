@@ -139,12 +139,19 @@ const CustomerPage: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
                     <Title level={4} style={{ margin: 0 }}>고객 관리</Title>
                     <Space>
-                        <Input.Search
-                            placeholder="이름 또는 전화번호 검색"
-                            allowClear
-                            onSearch={handleSearch}
-                            style={{ width: 250 }}
-                        />
+                        <Space.Compact style={{ width: 250 }}>
+                            <Input
+                                placeholder="이름 또는 전화번호 검색"
+                                allowClear
+                                value={searchText}
+                                onChange={(e) => {
+                                    setSearchText(e.target.value);
+                                    if (e.target.value === '') handleSearch('');
+                                }}
+                                onPressEnter={(e) => handleSearch(e.currentTarget.value)}
+                            />
+                            <Button type="primary" onClick={() => handleSearch(searchText)}>검색</Button>
+                        </Space.Compact>
                         <Button
                             type="primary"
                             icon={<PlusOutlined />}
