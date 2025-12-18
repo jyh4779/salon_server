@@ -189,6 +189,18 @@ VALUES (4, '010-4444-4444', 'customer1@example.com', 'password123', '박철수',
 INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
 VALUES (5, '010-5555-5555', 'customer2@example.com', 'password123', '최영희', 'CUSTOMER', 'FEMALE', '19920815', FALSE, 'NEW', NOW());
 
+-- Customer 3 (노쇼 주의)
+INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
+VALUES (6, '010-6666-6666', 'customer3@example.com', 'password123', '진상우', 'CUSTOMER', 'MALE', '19880101', TRUE, 'CAUTION', NOW());
+
+-- Customer 4 (VIP)
+INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
+VALUES (7, '010-7777-7777', 'customer4@example.com', 'password123', '한소희', 'CUSTOMER', 'FEMALE', '19951111', TRUE, 'VIP', NOW());
+
+-- Customer 5 (일반)
+INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
+VALUES (8, '010-8888-8888', 'customer5@example.com', 'password123', '이민수', 'CUSTOMER', 'MALE', '19900222', TRUE, 'NEW', NOW());
+
 
 -- 4-2. SHOPS (USERS 참조)
 INSERT INTO SHOPS (shop_id, owner_id, name, tel, address, settlement_bank, settlement_account)
@@ -215,21 +227,21 @@ VALUES
 
 
 -- 4-5. RESERVATIONS (SHOPS, USERS, DESIGNERS 참조)
--- 예약 1: 김스타 - 박철수 (오늘 14:00, 커트)
+-- 예약 1: 김스타 - 박철수 (오늘 14:00 KST -> 05:00 UTC, 커트)
 INSERT INTO RESERVATIONS (reservation_id, shop_id, customer_id, designer_id, start_time, end_time, status, request_memo, alarm_enabled, created_at)
-VALUES (1, 1, 4, 1, CONCAT(CURDATE(), ' 14:00:00'), CONCAT(CURDATE(), ' 14:30:00'), 'CONFIRMED', '짧게 잘라주세요', TRUE, NOW());
+VALUES (1, 1, 4, 1, CONCAT(CURDATE(), ' 05:00:00'), CONCAT(CURDATE(), ' 05:30:00'), 'CONFIRMED', '짧게 잘라주세요', TRUE, NOW());
 
--- 예약 2: 김스타 - 최영희 (오늘 16:00, 펌)
+-- 예약 2: 김스타 - 최영희 (오늘 16:00 KST -> 07:00 UTC, 펌)
 INSERT INTO RESERVATIONS (reservation_id, shop_id, customer_id, designer_id, start_time, end_time, status, request_memo, alarm_enabled, created_at)
-VALUES (2, 1, 5, 1, CONCAT(CURDATE(), ' 16:00:00'), CONCAT(CURDATE(), ' 18:00:00'), 'PENDING', '처음 방문입니다.', TRUE, NOW());
+VALUES (2, 1, 5, 1, CONCAT(CURDATE(), ' 07:00:00'), CONCAT(CURDATE(), ' 09:00:00'), 'PENDING', '처음 방문입니다.', TRUE, NOW());
 
--- 예약 3: 이초보 - 박철수 (내일 11:00, 염색)
+-- 예약 3: 이초보 - 박철수 (내일 11:00 KST -> 02:00 UTC, 염색)
 INSERT INTO RESERVATIONS (reservation_id, shop_id, customer_id, designer_id, start_time, end_time, status, request_memo, alarm_enabled, created_at)
-VALUES (3, 1, 4, 2, CONCAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), ' 11:00:00'), CONCAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), ' 12:30:00'), 'CONFIRMED', NULL, TRUE, NOW());
+VALUES (3, 1, 4, 2, CONCAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), ' 02:00:00'), CONCAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), ' 03:30:00'), 'CONFIRMED', NULL, TRUE, NOW());
 
--- 예약 4: 김스타 - 최영희 (어제 10:00, 커트)
+-- 예약 4: 김스타 - 최영희 (어제 10:00 KST -> 01:00 UTC, 커트)
 INSERT INTO RESERVATIONS (reservation_id, shop_id, customer_id, designer_id, start_time, end_time, status, request_memo, alarm_enabled, created_at)
-VALUES (4, 1, 5, 1, CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 10:00:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 10:30:00'), 'COMPLETED', NULL, TRUE, NOW());
+VALUES (4, 1, 5, 1, CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 01:00:00'), CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 01:30:00'), 'COMPLETED', NULL, TRUE, NOW());
 
 
 -- 4-6. RESERVATION_ITEMS (RESERVATIONS, MENUS 참조)
@@ -252,7 +264,59 @@ VALUES (4, 4, 1, '남성 디자인 커트', 25000);
 
 -- 4-7. PAYMENTS (RESERVATIONS 참조)
 INSERT INTO PAYMENTS (payment_id, reservation_id, type, amount, status, paid_at)
-VALUES (1, 4, 'SITE_CARD', 25000, 'PAID', CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 10:30:00'));
+VALUES (1, 4, 'SITE_CARD', 25000, 'PAID', CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 01:30:00'));
+
+-- 예약 5: 김스타 - 진상우 (오늘 11:00 KST -> 02:00 UTC, 두피 케어)
+INSERT INTO RESERVATIONS (reservation_id, shop_id, customer_id, designer_id, start_time, end_time, status, request_memo, alarm_enabled, created_at)
+VALUES (5, 1, 6, 1, CONCAT(CURDATE(), ' 02:00:00'), CONCAT(CURDATE(), ' 03:00:00'), 'PENDING', '조용히 받고 싶습니다.', TRUE, NOW());
+
+-- 예약 6: 김스타 - 한소희 (오늘 13:00 KST -> 04:00 UTC, 염색) - 점심 후 바로
+INSERT INTO RESERVATIONS (reservation_id, shop_id, customer_id, designer_id, start_time, end_time, status, request_memo, alarm_enabled, created_at)
+VALUES (6, 1, 7, 1, CONCAT(CURDATE(), ' 04:00:00'), CONCAT(CURDATE(), ' 05:30:00'), 'CONFIRMED', '애쉬 브라운으로 부탁해요', TRUE, NOW());
+
+-- 예약 7: 이초보 - 이민수 (오늘 15:00 KST -> 06:00 UTC, 커트)
+INSERT INTO RESERVATIONS (reservation_id, shop_id, customer_id, designer_id, start_time, end_time, status, request_memo, alarm_enabled, created_at)
+VALUES (7, 1, 8, 2, CONCAT(CURDATE(), ' 06:00:00'), CONCAT(CURDATE(), ' 06:30:00'), 'COMPLETED', NULL, TRUE, NOW());
+
+-- 예약 8: 이초보 - 최영희 (오늘 19:00 KST -> 10:00 UTC, 펌) - 퇴근 직전
+INSERT INTO RESERVATIONS (reservation_id, shop_id, customer_id, designer_id, start_time, end_time, status, request_memo, alarm_enabled, created_at)
+VALUES (8, 1, 5, 2, CONCAT(CURDATE(), ' 10:00:00'), CONCAT(CURDATE(), ' 12:00:00'), 'CONFIRMED', '늦지 않게 갈게요', TRUE, NOW());
+
+-- 예약 9: 김스타 - 박철수 (내일 14:00 KST -> 05:00 UTC, 두피 케어)
+INSERT INTO RESERVATIONS (reservation_id, shop_id, customer_id, designer_id, start_time, end_time, status, request_memo, alarm_enabled, created_at)
+VALUES (9, 1, 4, 1, CONCAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), ' 05:00:00'), CONCAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), ' 06:00:00'), 'PENDING', NULL, TRUE, NOW());
+
+-- 예약 10: 이초보 - 한소희 (내일 10:00 KST -> 01:00 UTC, 커트)
+INSERT INTO RESERVATIONS (reservation_id, shop_id, customer_id, designer_id, start_time, end_time, status, request_memo, alarm_enabled, created_at)
+VALUES (10, 1, 7, 2, CONCAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), ' 01:00:00'), CONCAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), ' 01:30:00'), 'CONFIRMED', '앞머리만 다듬어주세요', TRUE, NOW());
+
+
+-- 4-X. Additional Items & Payments
+-- 예약 5 (두피 케어)
+INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
+VALUES (5, 5, 4, '두피 케어', 50000);
+
+-- 예약 6 (염색)
+INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
+VALUES (6, 6, 3, '전체 염색', 80000);
+
+-- 예약 7 (커트)
+INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
+VALUES (7, 7, 1, '남성 디자인 커트', 25000);
+INSERT INTO PAYMENTS (payment_id, reservation_id, type, amount, status, paid_at)
+VALUES (2, 7, 'SITE_CASH', 25000, 'PAID', CONCAT(CURDATE(), ' 06:30:00'));
+
+-- 예약 8 (펌)
+INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
+VALUES (8, 8, 2, '여성 셋팅펌', 120000);
+
+-- 예약 9 (두피 케어)
+INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
+VALUES (9, 9, 4, '두피 케어', 50000);
+
+-- 예약 10 (커트)
+INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
+VALUES (10, 10, 1, '남성 디자인 커트', 25000);
 
 
 -- 4-8. SCHEDULE_BLOCKS (DESIGNERS 참조)

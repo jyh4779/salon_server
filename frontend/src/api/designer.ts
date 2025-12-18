@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-import { API_BASE_URL } from '../constants/config';
+import { api } from './client';
 
 
 export interface DesignerDTO {
@@ -21,19 +19,19 @@ export interface DesignerDTO {
 }
 
 export const getDesigners = async (shopId: number = 1): Promise<DesignerDTO[]> => {
-    const response = await axios.get(`${API_BASE_URL}/designers`, {
+    const response = await api.get(`/designers`, {
         params: { shop_id: shopId }
     });
     return response.data;
 };
 
 export const updateDesigner = async (id: number, data: Partial<DesignerDTO>): Promise<DesignerDTO> => {
-    const response = await axios.patch(`${API_BASE_URL}/designers/${id}`, data);
+    const response = await api.patch(`/designers/${id}`, data);
     return response.data;
 };
 
 export const createDesigner = async (shopId: number, data: { name: string; phone: string; intro_text?: string }): Promise<DesignerDTO> => {
-    const response = await axios.post(`${API_BASE_URL}/designers`, data, {
+    const response = await api.post(`/designers`, data, {
         params: { shop_id: shopId }
     });
     return response.data;

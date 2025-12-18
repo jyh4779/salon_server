@@ -1,54 +1,72 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { Layout, theme, Flex, Button, Segmented } from 'antd';
+import { Layout, theme, Flex, Button, Segmented, Tabs } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import koLocale from '@fullcalendar/core/locales/ko';
 import dayjs from 'dayjs';
 import DateNavigator from '../../components/schedule/DateNavigator';
-import MainCalendar from '../../components/schedule/MainCalendar';
 import { STRINGS, RESERVATION_STATUS_COLORS } from '../../constants/strings';
 import { useReservations } from '../../hooks/useReservations';
 import NewReservationModal from '../../components/schedule/NewReservationModal';
 import ReservationDetailModal from '../../components/schedule/ReservationDetailModal';
 import { CreateReservationDTO } from '../../types/reservation';
+import { getShop, ShopDTO } from '../../api/shops';
 import { EventClickArg } from '@fullcalendar/core';
+import styled from 'styled-components';
 
 const { Content } = Layout;
 
+const CalendarWrapper = styled.div`
+  .fc {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+  /* Increase slot height */
+  .fc-timegrid-slot {
+    height: 3.5em !important; 
+  }
+`;
+
 const SchedulePage: React.FC = () => {
-    // Calendar Ref를 통해 API에 접근 (prev, next 등)
     const calendarRef = useRef<FullCalendar>(null);
-
-    // 현재 보고 있는 날짜 상태
     const [currentDate, setCurrentDate] = useState<Date>(new Date());
-    const [viewType, setViewType] = useState<string>('resourceTimeGridDay');
+    const [viewType, setViewType] = useState<string>('timeGridDay'); // Standard View
+    const [activeDesignerId, setActiveDesignerId] = useState<string>('all');
 
-    // 디자이너 리소스 상태
+    // Designers State (Simulated/Fetched) - For Tabs
     const [designers, setDesigners] = useState<any[]>([]);
+    const [shopInfo, setShopInfo] = useState<ShopDTO | null>(null);
 
     React.useEffect(() => {
-        const fetchDesigners = async () => {
+        const fetchData = async () => {
             try {
+                // Fetch Shop Info (Default 1 for now)
+                const shop = await getShop(1);
+                setShopInfo(shop);
+
+                // Fetch Designers
                 const { getDesigners } = await import('../../api/designer');
                 const data = await getDesigners();
-                setDesigners(data.map(d => ({
-                    id: d.designer_id.toString(),
-                    title: d.USERS.name
-                })));
+                setDesigners([
+                    { id: 'all', title: '전체 보기' }, // Option for 'All'
+                    ...data.map(d => ({
+                        id: d.designer_id.toString(),
+                        title: d.USERS.name
+                    }))
+                ]);
             } catch (error) {
-                console.error('Failed to load designers:', error);
+                console.error('Failed to load initial data:', error);
             }
         };
-        fetchDesigners();
+        fetchData();
     }, []);
 
-    // 새 예약 모달 상태
     const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
-
-    // 예약 상세 모달 상태
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
 
-    // 예약 클릭 핸들러
     const handleEventClick = (info: EventClickArg) => {
         const reservationId = info.event.id;
         setSelectedReservationId(reservationId);
@@ -61,7 +79,6 @@ const SchedulePage: React.FC = () => {
     };
 
     const handleUpdateReservation = () => {
-        console.log('Reservation Updated/Deleted, refreshing list...');
         refetch();
     };
 
@@ -69,7 +86,6 @@ const SchedulePage: React.FC = () => {
         token: { colorBgContainer, borderRadiusLG },
     } = theme.useToken();
 
-    // Query Params 계산
     const queryParams = useMemo(() => {
         const current = dayjs(currentDate);
         let start, end;
@@ -88,21 +104,25 @@ const SchedulePage: React.FC = () => {
         };
     }, [currentDate, viewType]);
 
-    // 예약 데이터 조회
     const { data: reservations, refetch } = useReservations(queryParams);
 
-    // FullCalendar Event 변환
+    // Filter Events by Tab
     const events = useMemo(() => {
         if (!reservations) return [];
-        return reservations.map(reservation => {
+
+        // 1. Filter by Designer
+        let filtered = reservations;
+        if (activeDesignerId !== 'all') {
+            filtered = reservations.filter(r => r.designer_id.toString() === activeDesignerId);
+        }
+
+        return filtered.map(reservation => {
             const statusColor = RESERVATION_STATUS_COLORS[reservation.status as keyof typeof RESERVATION_STATUS_COLORS] || '#1677ff';
 
             return {
                 id: reservation.reservation_id.toString(),
-                resourceId: reservation.designer_id.toString(),
-                title: viewType === 'resourceTimeGridDay'
-                    ? `${reservation.USERS.name}`
-                    : `${reservation.USERS.name} (${reservation.DESIGNERS.USERS.name})`,
+                // resourceId: removed (not using resource view)
+                title: `${reservation.USERS.name} (${reservation.DESIGNERS.USERS.name})`,
                 start: reservation.start_time,
                 end: reservation.end_time,
                 backgroundColor: statusColor,
@@ -115,9 +135,9 @@ const SchedulePage: React.FC = () => {
                 }
             };
         });
-    }, [reservations, viewType]);
+    }, [reservations, activeDesignerId]);
 
-    // 이전 날짜로 이동
+    // Navigation Handlers
     const handlePrev = () => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
@@ -125,8 +145,6 @@ const SchedulePage: React.FC = () => {
             setCurrentDate(calendarApi.getDate());
         }
     };
-
-    // 다음 날짜로 이동
     const handleNext = () => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
@@ -134,8 +152,6 @@ const SchedulePage: React.FC = () => {
             setCurrentDate(calendarApi.getDate());
         }
     };
-
-    // 오늘 날짜로 이동
     const handleToday = () => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
@@ -143,8 +159,6 @@ const SchedulePage: React.FC = () => {
             setCurrentDate(calendarApi.getDate());
         }
     };
-
-    // 뷰 변경 (일일/주간)
     const handleViewChange = (value: string) => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
@@ -153,42 +167,47 @@ const SchedulePage: React.FC = () => {
         }
     };
 
-    // 새 예약 모달 핸들러
     const handleOpenModal = () => setIsReservationModalOpen(true);
     const handleCloseModal = () => setIsReservationModalOpen(false);
-
-    // 예약 생성 핸들러
     const handleCreateReservation = (_data: CreateReservationDTO) => {
-        console.log('New Reservation Created, refreshing list...');
         refetch();
     };
 
     return (
         <Content>
-            <Flex vertical gap="large" style={{ height: '100%' }}>
-                {/* Header Section: Date Navigation & New Reservation Button */}
+            <Flex vertical gap="small" style={{ height: '100%' }}>
+                {/* 1. Designer Tabs - KEY difference */}
+                <div style={{ background: colorBgContainer, padding: '0 16px', borderRadius: borderRadiusLG }}>
+                    <Tabs
+                        activeKey={activeDesignerId}
+                        onChange={setActiveDesignerId}
+                        items={designers.map(d => ({
+                            key: d.id,
+                            label: d.title,
+                        }))}
+                    />
+                </div>
+
+                {/* 2. Header */}
                 <div style={{
                     padding: 16,
                     background: colorBgContainer,
                     borderRadius: borderRadiusLG,
                     display: 'flex',
-                    justifyContent: 'space-between', // 네비게이터는 중앙, 버튼은 우측 등 배치를 위해
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    position: 'relative' // 네비게이터 중앙 정렬을 위한 꼼수
                 }}>
-                    {/* 좌측 뷰 스위처 (일일/주간) */}
                     <div style={{ width: 140 }}>
                         <Segmented
                             options={[
-                                { label: STRINGS.SCHEDULE.CALENDAR.VIEW_DAY, value: 'resourceTimeGridDay' },
-                                { label: STRINGS.SCHEDULE.CALENDAR.VIEW_WEEK, value: 'timeGridWeek' },
+                                { label: '일간', value: 'timeGridDay' }, // Free Standard View
+                                { label: '주간', value: 'timeGridWeek' },
                             ]}
                             value={viewType}
                             onChange={handleViewChange}
                         />
                     </div>
 
-                    {/* 중앙 네비게이터 */}
                     <DateNavigator
                         currentDate={currentDate}
                         onPrev={handlePrev}
@@ -197,45 +216,50 @@ const SchedulePage: React.FC = () => {
                         viewType={viewType}
                     />
 
-                    {/* 우측 새 예약 버튼 (F-SCH-003 미리보기) */}
                     <div style={{ width: 100, textAlign: 'right' }}>
                         <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenModal}>
-                            {STRINGS.SCHEDULE.NEW_RESERVATION}
+                            새 예약
                         </Button>
                     </div>
                 </div>
 
-                {/* Body Section: FullCalendar */}
+                {/* 3. Calendar Body - Standard View */}
                 <div style={{
                     padding: 24,
                     background: colorBgContainer,
                     borderRadius: borderRadiusLG,
-                    flex: 1, // 남은 공간 채우기
+                    flex: 1,
                     overflow: 'hidden'
                 }}>
-                    <MainCalendar
-                        ref={calendarRef}
-                        initialDate={currentDate}
-                        resources={designers}
-                        events={events}
-                        eventContent={(eventInfo) => {
-                            const { title, extendedProps } = eventInfo.event;
-                            return (
-                                <div style={{ padding: '2px 4px', overflow: 'hidden' }}>
-                                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{title}</div>
-                                    {extendedProps.menu && (
-                                        <div style={{ fontSize: '12px', marginTop: '2px' }}>✂ {extendedProps.menu}</div>
-                                    )}
-                                    {extendedProps.memo && (
-                                        <div style={{ fontSize: '11px', color: '#fff', opacity: 0.9, marginTop: '2px' }}>
-                                            📝 {extendedProps.memo}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        }}
-                        eventClick={handleEventClick}
-                    />
+                    <CalendarWrapper>
+                        <FullCalendar
+                            ref={calendarRef}
+                            plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]} // No resource plugin
+                            initialView="timeGridDay"
+                            initialDate={currentDate}
+                            locale={koLocale}
+                            headerToolbar={false}
+                            slotMinTime={shopInfo?.open_time ? `${shopInfo.open_time}:00` : "10:00:00"}
+                            slotMaxTime={shopInfo?.close_time ? `${shopInfo.close_time}:00` : "20:00:00"}
+                            allDaySlot={false}
+                            slotEventOverlap={false}
+                            nowIndicator={true}
+                            height="auto"
+                            events={events} // Filtered events only
+                            eventClick={handleEventClick}
+                            eventContent={(eventInfo) => {
+                                const { title, extendedProps } = eventInfo.event;
+                                return (
+                                    <div style={{ padding: '2px 4px', overflow: 'hidden' }}>
+                                        <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{title}</div>
+                                        {extendedProps.menu && (
+                                            <div style={{ fontSize: '12px', marginTop: '2px' }}>✂ {extendedProps.menu}</div>
+                                        )}
+                                    </div>
+                                );
+                            }}
+                        />
+                    </CalendarWrapper>
                 </div>
             </Flex>
 

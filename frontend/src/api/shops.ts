@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-import { API_BASE_URL } from '../constants/config';
+import { api } from './client';
 
 
 export interface ShopDTO {
@@ -18,11 +16,11 @@ export interface ShopDTO {
 }
 
 export const getShop = async (id: number = 1): Promise<ShopDTO> => {
-    const response = await axios.get(`${API_BASE_URL}/shops/${id}`);
+    const response = await api.get(`/shops/${id}`);
     return response.data;
 };
 
 export const updateShop = async (id: number = 1, data: Partial<ShopDTO>): Promise<ShopDTO> => {
-    const response = await axios.patch(`${API_BASE_URL}/shops/${id}`, data);
+    const response = await api.patch(`/shops/${id}`, data);
     return response.data;
 };
