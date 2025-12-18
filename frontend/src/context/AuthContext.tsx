@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios'; // We will replace this with our custom client later, but for login call we need base logic
+// import axios from 'axios'; // Removed unused import
 import { UserDTO } from '../api/user'; // Assuming UserDTO exists or define here
 // We need to use the client instance we are about to create, but creating circular dependency might be tricky.
 // Usually AuthContext uses API functions.

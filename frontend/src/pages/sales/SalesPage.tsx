@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Typography, Card, Table, DatePicker, Row, Col, Statistic, message, Tabs, Button, Space } from 'antd';
-import { ArrowLeftOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { Layout, Typography, Card, Table, DatePicker, Row, Col, Statistic, message, Tabs, Button } from 'antd';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { getDailySales, DailySalesData, SalesTransaction } from '../../api/sales';
