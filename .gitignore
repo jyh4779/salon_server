@@ -45,3 +45,6 @@ yarn-error.log*
 coverage/
 frontend/coverage/
 backend/coverage/
+
+# Local Config
+frontend/src/constants/config.ts
