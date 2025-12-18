@@ -130,7 +130,7 @@ const MenuSettings: React.FC = () => {
                 open={isModalOpen}
                 onOk={handleModalOk}
                 onCancel={() => setIsModalOpen(false)}
-                destroyOnClose
+                destroyOnHidden
             >
                 <Form form={form} layout="vertical">
                     <Form.Item label="카테고리" name="category" rules={[{ required: true }]}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Modal, Form, InputNumber, Select, Input, Button, Flex } from 'antd';
 import { STRINGS } from '../../constants/strings';
 
@@ -50,7 +50,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
             onCancel={onClose}
             title="시술 완료 및 결제"
             footer={null}
-            destroyOnClose
+            destroyOnHidden
         >
             <Form form={form} layout="vertical">
                 <Form.Item

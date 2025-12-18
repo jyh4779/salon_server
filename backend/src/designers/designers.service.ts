@@ -45,10 +45,32 @@ export class DesignersService {
             }
         });
 
+        if (data.name || data.phone) {
+            // Find linked user_id first
+            const currentDesigner = await this.prisma.dESIGNERS.findUnique({
+                where: { designer_id: BigInt(id) },
+                select: { user_id: true }
+            });
+
+            if (currentDesigner) {
+                await this.prisma.uSERS.update({
+                    where: { user_id: currentDesigner.user_id },
+                    data: {
+                        name: data.name,
+                        phone: data.phone,
+                    }
+                });
+            }
+
+            // Remove from updateData to prevent Prisma error on DESIGNERS table
+            delete updateData.name;
+            delete updateData.phone;
+        }
+
         const designer = await this.prisma.dESIGNERS.update({
             where: { designer_id: BigInt(id) },
             data: updateData,
-            include: { USERS: { select: { name: true } } }
+            include: { USERS: { select: { name: true, phone: true } } }
         });
 
         return {

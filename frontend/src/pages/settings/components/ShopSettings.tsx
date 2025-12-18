@@ -58,6 +58,7 @@ const ShopSettings: React.FC = () => {
             message.success('매장 정보가 저장되었습니다.');
             fetchShop(); // Refresh
         } catch (error) {
+            console.error('[ShopSettings] Save Error:', error);
             message.error('저장에 실패했습니다.');
         } finally {
             setLoading(false);
@@ -67,7 +68,7 @@ const ShopSettings: React.FC = () => {
     if (loading && !shop) return <Spin />;
 
     return (
-        <Card title="매장 운영 설정" bordered={false}>
+        <Card title="매장 운영 설정" variant="borderless">
             <Form
                 form={form}
                 layout="vertical"

@@ -38,24 +38,35 @@ const DesignerSettings: React.FC = () => {
 
     const handleEdit = (designer: DesignerDTO) => {
         setEditingDesigner(designer);
-        form.setFieldsValue({
-            ...designer,
-            name: designer.USERS.name,
-            work_start: designer.work_start ? dayjs(designer.work_start, 'HH:mm') : null,
-            work_end: designer.work_end ? dayjs(designer.work_end, 'HH:mm') : null,
-            lunch_start: designer.lunch_start ? dayjs(designer.lunch_start, 'HH:mm') : null,
-            lunch_end: designer.lunch_end ? dayjs(designer.lunch_end, 'HH:mm') : null,
-            day_off: designer.day_off ? designer.day_off.split(',') : [],
-            is_active: designer.is_active ?? true,
-        });
         setIsModalOpen(true);
     };
 
     const handleCreate = () => {
-        setEditingDesigner(null); // Create mode
-        form.resetFields();
+        setEditingDesigner(null);
         setIsModalOpen(true);
     };
+
+    // Effect to populate form when modal opens
+    useEffect(() => {
+        if (isModalOpen) {
+            if (editingDesigner) {
+                form.setFieldsValue({
+                    ...editingDesigner,
+                    name: editingDesigner.USERS.name,
+                    phone: editingDesigner.USERS.phone,
+                    work_start: editingDesigner.work_start ? dayjs(editingDesigner.work_start, 'HH:mm') : null,
+                    work_end: editingDesigner.work_end ? dayjs(editingDesigner.work_end, 'HH:mm') : null,
+                    lunch_start: editingDesigner.lunch_start ? dayjs(editingDesigner.lunch_start, 'HH:mm') : null,
+                    lunch_end: editingDesigner.lunch_end ? dayjs(editingDesigner.lunch_end, 'HH:mm') : null,
+                    day_off: editingDesigner.day_off ? editingDesigner.day_off.split(',') : [],
+                    is_active: editingDesigner.is_active ?? true,
+                });
+            } else {
+                form.resetFields();
+            }
+        }
+    }, [isModalOpen, editingDesigner, form]);
+
 
     const handleModalOk = async () => {
         try {
@@ -71,7 +82,10 @@ const DesignerSettings: React.FC = () => {
                     lunch_end: values.lunch_end ? values.lunch_end.format('HH:mm') : undefined,
                     day_off: values.day_off ? values.day_off.join(',') : '',
                     is_active: values.is_active,
-                };
+                    // Use type assertion or extended interface if needed, but for now passing as any to bypass Partial<DesignerDTO> strictness if name is not in DTO interface
+                    name: values.name,
+                    phone: values.phone,
+                } as any;
                 await updateDesigner(parseInt(editingDesigner.designer_id, 10), payload);
                 message.success('수정되었습니다.');
             } else {
@@ -144,14 +158,14 @@ const DesignerSettings: React.FC = () => {
                 open={isModalOpen}
                 onOk={handleModalOk}
                 onCancel={() => setIsModalOpen(false)}
-                destroyOnClose
+                destroyOnHidden
             >
                 <Form form={form} layout="vertical">
                     <Form.Item label="이름" name="name" rules={[{ required: true, message: '이름을 입력해주세요.' }]}>
-                        <Input disabled={!!editingDesigner} placeholder="이름" />
+                        <Input placeholder="이름" />
                     </Form.Item>
                     <Form.Item label="전화번호" name="phone" rules={[{ required: true, message: '전화번호를 입력해주세요.' }]}>
-                        <Input disabled={!!editingDesigner} placeholder="010-1234-5678" />
+                        <Input placeholder="010-1234-5678" />
                     </Form.Item>
 
                     <Form.Item label="소개글" name="intro_text">

@@ -8,7 +8,8 @@ import interactionPlugin from '@fullcalendar/interaction';
 import koLocale from '@fullcalendar/core/locales/ko';
 import dayjs from 'dayjs';
 import DateNavigator from '../../components/schedule/DateNavigator';
-import { STRINGS, RESERVATION_STATUS_COLORS } from '../../constants/strings';
+import { RESERVATION_STATUS_COLORS } from '../../constants/strings';
+import { COLORS } from '../../constants/colors';
 import { useReservations } from '../../hooks/useReservations';
 import NewReservationModal from '../../components/schedule/NewReservationModal';
 import ReservationDetailModal from '../../components/schedule/ReservationDetailModal';
@@ -50,10 +51,11 @@ const SchedulePage: React.FC = () => {
                 const { getDesigners } = await import('../../api/designer');
                 const data = await getDesigners();
                 setDesigners([
-                    { id: 'all', title: '전체 보기' }, // Option for 'All'
+                    { id: 'all', title: '전체 보기', data: null }, // Option for 'All'
                     ...data.map(d => ({
                         id: d.designer_id.toString(),
-                        title: d.USERS.name
+                        title: d.USERS.name,
+                        data: d // Store full DTO
                     }))
                 ]);
             } catch (error) {
@@ -106,36 +108,97 @@ const SchedulePage: React.FC = () => {
 
     const { data: reservations, refetch } = useReservations(queryParams);
 
-    // Filter Events by Tab
-    const events = useMemo(() => {
-        if (!reservations) return [];
+    // Helper: Map Day String to Integer (0=Sun, 1=Mon...)
+    const dayToJsonInt = (dayStr: string) => {
+        // Normalize: uppercase first letter, rest lowercase? Or just strict map for now.
+        // DB seems to return "Thu".
+        const map: { [key: string]: number } = {
+            'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6,
+            'SUN': 0, 'MON': 1, 'TUE': 2, 'WED': 3, 'THU': 4, 'FRI': 5, 'SAT': 6
+        };
+        return map[dayStr] ?? -1;
+    };
 
-        // 1. Filter by Designer
-        let filtered = reservations;
-        if (activeDesignerId !== 'all') {
-            filtered = reservations.filter(r => r.designer_id.toString() === activeDesignerId);
+    // Filter Events by Tab & Add Background Events
+    const events = useMemo(() => {
+        let allEvents: any[] = [];
+
+        // 1. Reservation Events
+        if (reservations) {
+            let filtered = reservations;
+            if (activeDesignerId !== 'all') {
+                filtered = reservations.filter(r => r.designer_id.toString() === activeDesignerId);
+            }
+            const resEvents = filtered.map(reservation => {
+                const statusColor = RESERVATION_STATUS_COLORS[reservation.status as keyof typeof RESERVATION_STATUS_COLORS] || '#1677ff';
+                return {
+                    id: reservation.reservation_id.toString(),
+                    title: `${reservation.USERS.name} (${reservation.DESIGNERS.USERS.name})`,
+                    start: reservation.start_time,
+                    end: reservation.end_time,
+                    backgroundColor: statusColor,
+                    borderColor: statusColor,
+                    extendedProps: {
+                        status: reservation.status,
+                        phone: reservation.USERS.phone,
+                        menu: reservation.RESERVATION_ITEMS?.[0]?.menu_name || '',
+                        memo: reservation.request_memo || ''
+                    }
+                };
+            });
+            allEvents = [...allEvents, ...resEvents];
         }
 
-        return filtered.map(reservation => {
-            const statusColor = RESERVATION_STATUS_COLORS[reservation.status as keyof typeof RESERVATION_STATUS_COLORS] || '#1677ff';
+        // 2. Background Events (Shop Closed) - Always shown
+        if (shopInfo?.closed_days) {
+            const closedDays = shopInfo.closed_days.split(',').map(d => dayToJsonInt(d.trim())).filter(d => d !== -1);
+            if (closedDays.length > 0) {
+                allEvents.push({
+                    daysOfWeek: closedDays,
+                    display: 'background',
+                    color: COLORS.CALENDAR.UNAVAILABLE,
+                    // Removed allDay: true because allDaySlot is hidden
+                    title: '휴무'
+                });
+            }
+        }
 
-            return {
-                id: reservation.reservation_id.toString(),
-                // resourceId: removed (not using resource view)
-                title: `${reservation.USERS.name} (${reservation.DESIGNERS.USERS.name})`,
-                start: reservation.start_time,
-                end: reservation.end_time,
-                backgroundColor: statusColor,
-                borderColor: statusColor,
-                extendedProps: {
-                    status: reservation.status,
-                    phone: reservation.USERS.phone,
-                    menu: reservation.RESERVATION_ITEMS?.[0]?.menu_name || '',
-                    memo: reservation.request_memo || ''
+        // 3. Designer Availability (Lunch / Day Off) - Only if specific designer selected
+        if (activeDesignerId !== 'all') {
+            const currentDesigner = designers.find(d => d.id === activeDesignerId);
+            if (currentDesigner && currentDesigner.data) {
+                const dData = currentDesigner.data; // Raw DesignerDTO
+
+                // Day Off
+                if (dData.day_off) {
+                    const daysOff = dData.day_off.split(',').map((d: string) => dayToJsonInt(d.trim())).filter((d: number) => d !== -1);
+                    if (daysOff.length > 0) {
+                        allEvents.push({
+                            daysOfWeek: daysOff,
+                            display: 'background',
+                            color: COLORS.CALENDAR.UNAVAILABLE,
+                            // Removed allDay: true
+                            title: '휴무'
+                        });
+                    }
                 }
-            };
-        });
-    }, [reservations, activeDesignerId]);
+
+                // Lunch Time
+                if (dData.lunch_start && dData.lunch_end) {
+                    allEvents.push({
+                        daysOfWeek: [0, 1, 2, 3, 4, 5, 6], // Every day recurrence
+                        startTime: dData.lunch_start, // HH:mm
+                        endTime: dData.lunch_end,
+                        display: 'background',
+                        color: COLORS.CALENDAR.UNAVAILABLE,
+                        title: '점심시간',
+                    });
+                }
+            }
+        }
+
+        return allEvents;
+    }, [reservations, activeDesignerId, shopInfo, designers]);
 
     // Navigation Handlers
     const handlePrev = () => {

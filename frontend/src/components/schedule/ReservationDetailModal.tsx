@@ -177,7 +177,7 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
             onCancel={onClose}
             title={mode === 'view' ? "예약 상세" : "예약 수정"}
             footer={null}
-            destroyOnClose
+            destroyOnHidden
         >
             {mode === 'view' ? (
                 <Flex vertical gap="middle">
