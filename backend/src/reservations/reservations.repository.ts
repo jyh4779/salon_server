@@ -7,9 +7,10 @@ import { RESERVATIONS_status } from '@prisma/client';
 export class ReservationsRepository {
     constructor(private prisma: PrismaService) { }
 
-    async getReservations(startDate: string, endDate: string) {
+    async getReservations(shopId: number, startDate: string, endDate: string) {
         return this.prisma.rESERVATIONS.findMany({
             where: {
+                shop_id: BigInt(shopId), // Filter by Shop ID
                 start_time: {
                     gte: new Date(startDate),
                     lte: new Date(endDate),
@@ -65,9 +66,12 @@ export class ReservationsRepository {
         });
     }
 
-    async getReservationById(id: number) {
-        return this.prisma.rESERVATIONS.findUnique({
-            where: { reservation_id: id },
+    async getReservationById(shopId: number, id: number) {
+        return this.prisma.rESERVATIONS.findFirst({
+            where: {
+                reservation_id: id,
+                shop_id: BigInt(shopId),
+            },
             include: {
                 USERS: {
                     select: {
@@ -89,13 +93,16 @@ export class ReservationsRepository {
         });
     }
 
-    async updateReservation(id: number, data: any) {
+    async updateReservation(shopId: number, id: number, data: any) {
         // data type usage: UpdateReservationDto
         const { treatment_id, menu, price, ...rest } = data;
 
         // 1. Update Reservation Basic Info
         const updatedReservation = await this.prisma.rESERVATIONS.update({
-            where: { reservation_id: id },
+            where: {
+                reservation_id: id,
+                shop_id: BigInt(shopId),
+            },
             data: {
                 ...rest,
                 start_time: rest.start_time ? new Date(rest.start_time) : undefined,
@@ -131,13 +138,16 @@ export class ReservationsRepository {
         return updatedReservation;
     }
 
-    async completeReservation(id: number, data: any) {
+    async completeReservation(shopId: number, id: number, data: any) {
         const { totalPrice, paymentType, paymentMemo } = data;
 
         return this.prisma.$transaction(async (tx) => {
             // 1. Update Reservation Status
             const updatedReservation = await tx.rESERVATIONS.update({
-                where: { reservation_id: id },
+                where: {
+                    reservation_id: id,
+                    shop_id: BigInt(shopId),
+                },
                 data: {
                     status: 'COMPLETED',
                     // Optional: Update final price if it differs? 
@@ -163,7 +173,10 @@ export class ReservationsRepository {
             // Let's append to request_memo for simplicity or ignore if no field.
             if (paymentMemo) {
                 await tx.rESERVATIONS.update({
-                    where: { reservation_id: id },
+                    where: {
+                        reservation_id: id,
+                        shop_id: BigInt(shopId),
+                    },
                     data: {
                         request_memo: paymentMemo
                         // Or append: request_memo: `${existing.request_memo}\n[결제메모] ${paymentMemo}`
@@ -177,9 +190,12 @@ export class ReservationsRepository {
         });
     }
 
-    async deleteReservation(id: number) {
+    async deleteReservation(shopId: number, id: number) {
         return this.prisma.rESERVATIONS.delete({
-            where: { reservation_id: id }
+            where: {
+                reservation_id: id,
+                shop_id: BigInt(shopId),
+            }
         });
     }
 }

@@ -86,6 +86,7 @@ CREATE TABLE MENUS (
     is_deleted BOOLEAN DEFAULT FALSE,
     type ENUM('MENU', 'CATEGORY') DEFAULT 'MENU',
     sort_order INT DEFAULT 0,
+    thumbnail_url VARCHAR(255),
     FOREIGN KEY (shop_id) REFERENCES SHOPS(shop_id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
@@ -173,35 +174,35 @@ CREATE TABLE VISIT_LOGS (
 -- 4-1. USERS (최상위 부모)
 -- Owner (원장)
 INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
-VALUES (1, '010-1111-1111', 'owner@example.com', 'password123', '홍길동 원장', 'OWNER', 'MALE', '19800101', TRUE, 'VIP', NOW());
+VALUES (1, '010-1111-1111', 'owner@example.com', '$2b$10$VoClC0.zB6kvBc8e/0Vrz.ELNzQTayuhDWYvF2MUP73XGhkJnUpjK', '홍길동 원장', 'OWNER', 'MALE', '19800101', TRUE, 'VIP', NOW());
 
 -- Designer 1 (수석)
 INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
-VALUES (2, '010-2222-2222', 'designer1@example.com', 'password123', '김스타 수석', 'DESIGNER', 'FEMALE', '19900505', TRUE, 'VIP', NOW());
+VALUES (2, '010-2222-2222', 'designer1@example.com', '$2b$10$VoClC0.zB6kvBc8e/0Vrz.ELNzQTayuhDWYvF2MUP73XGhkJnUpjK', '김스타 수석', 'DESIGNER', 'FEMALE', '19900505', TRUE, 'VIP', NOW());
 
 -- Designer 2 (신입)
 INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
-VALUES (3, '010-3333-3333', 'designer2@example.com', 'password123', '이초보', 'DESIGNER', 'MALE', '19951225', TRUE, 'VIP', NOW());
+VALUES (3, '010-3333-3333', 'designer2@example.com', '$2b$10$VoClC0.zB6kvBc8e/0Vrz.ELNzQTayuhDWYvF2MUP73XGhkJnUpjK', '이초보', 'DESIGNER', 'MALE', '19951225', TRUE, 'VIP', NOW());
 
 -- Customer 1 (단골)
 INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
-VALUES (4, '010-4444-4444', 'customer1@example.com', 'password123', '박철수', 'CUSTOMER', 'MALE', '19850303', TRUE, 'VIP', NOW());
+VALUES (4, '010-4444-4444', 'customer1@example.com', '$2b$10$VoClC0.zB6kvBc8e/0Vrz.ELNzQTayuhDWYvF2MUP73XGhkJnUpjK', '박철수', 'CUSTOMER', 'MALE', '19850303', TRUE, 'VIP', NOW());
 
 -- Customer 2 (신규)
 INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
-VALUES (5, '010-5555-5555', 'customer2@example.com', 'password123', '최영희', 'CUSTOMER', 'FEMALE', '19920815', FALSE, 'NEW', NOW());
+VALUES (5, '010-5555-5555', 'customer2@example.com', '$2b$10$VoClC0.zB6kvBc8e/0Vrz.ELNzQTayuhDWYvF2MUP73XGhkJnUpjK', '최영희', 'CUSTOMER', 'FEMALE', '19920815', FALSE, 'NEW', NOW());
 
 -- Customer 3 (노쇼 주의)
 INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
-VALUES (6, '010-6666-6666', 'customer3@example.com', 'password123', '진상우', 'CUSTOMER', 'MALE', '19880101', TRUE, 'CAUTION', NOW());
+VALUES (6, '010-6666-6666', 'customer3@example.com', '$2b$10$VoClC0.zB6kvBc8e/0Vrz.ELNzQTayuhDWYvF2MUP73XGhkJnUpjK', '진상우', 'CUSTOMER', 'MALE', '19880101', TRUE, 'CAUTION', NOW());
 
 -- Customer 4 (VIP)
 INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
-VALUES (7, '010-7777-7777', 'customer4@example.com', 'password123', '한소희', 'CUSTOMER', 'FEMALE', '19951111', TRUE, 'VIP', NOW());
+VALUES (7, '010-7777-7777', 'customer4@example.com', '$2b$10$VoClC0.zB6kvBc8e/0Vrz.ELNzQTayuhDWYvF2MUP73XGhkJnUpjK', '한소희', 'CUSTOMER', 'FEMALE', '19951111', TRUE, 'VIP', NOW());
 
 -- Customer 5 (일반)
 INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
-VALUES (8, '010-8888-8888', 'customer5@example.com', 'password123', '이민수', 'CUSTOMER', 'MALE', '19900222', TRUE, 'NEW', NOW());
+VALUES (8, '010-8888-8888', 'customer5@example.com', '$2b$10$VoClC0.zB6kvBc8e/0Vrz.ELNzQTayuhDWYvF2MUP73XGhkJnUpjK', '이민수', 'CUSTOMER', 'MALE', '19900222', TRUE, 'NEW', NOW());
 
 
 -- 4-2. SHOPS (USERS 참조)
@@ -337,6 +338,57 @@ VALUES (1, 1, CONCAT(CURDATE(), ' 13:00:00'), CONCAT(CURDATE(), ' 14:00:00'), 'L
 
 INSERT INTO SCHEDULE_BLOCKS (block_id, designer_id, start_time, end_time, type)
 VALUES (2, 2, CONCAT(CURDATE(), ' 15:00:00'), CONCAT(CURDATE(), ' 16:00:00'), 'PERSONAL');
+
+
+-- ==========================================
+-- 5. Shop 2 Data (Multi-tenancy Test)
+-- ==========================================
+
+-- 5-1. USERS for Shop 2
+-- Owner 2 (홍대점 원장)
+INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
+VALUES (11, '010-9999-9999', 'owner2@example.com', '$2b$10$VoClC0.zB6kvBc8e/0Vrz.ELNzQTayuhDWYvF2MUP73XGhkJnUpjK', '김철수 원장', 'OWNER', 'MALE', '19820202', TRUE, 'VIP', NOW());
+
+-- Designer 3 (홍대점 디자이너)
+INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
+VALUES (12, '010-9898-9898', 'designer3@example.com', '$2b$10$VoClC0.zB6kvBc8e/0Vrz.ELNzQTayuhDWYvF2MUP73XGhkJnUpjK', '박감각', 'DESIGNER', 'FEMALE', '19930303', TRUE, 'VIP', NOW());
+
+-- Customer 6 (홍대점 고객)
+INSERT INTO USERS (user_id, phone, email, password, name, role, gender, birthdate, is_app_user, grade, created_at)
+VALUES (13, '010-8787-8787', 'customer6@example.com', '$2b$10$VoClC0.zB6kvBc8e/0Vrz.ELNzQTayuhDWYvF2MUP73XGhkJnUpjK', '정고객', 'CUSTOMER', 'FEMALE', '19901010', TRUE, 'NEW', NOW());
+
+
+-- 5-2. SHOPS (Shop 2)
+INSERT INTO SHOPS (shop_id, owner_id, name, tel, address, settlement_bank, settlement_account)
+VALUES (2, 11, '살롱 매니저 홍대점', '02-987-6543', '서울시 마포구 양화로 123', '신한은행', '987-654-321098');
+
+
+-- 5-3. DESIGNERS (Shop 2)
+INSERT INTO DESIGNERS (designer_id, user_id, shop_id, intro_text, work_start, work_end, is_active)
+VALUES (3, 12, 2, '홍대 스타일 전문 박감각입니다.', '11:00:00', '21:00:00', TRUE);
+
+
+-- 5-4. MENUS (Shop 2)
+INSERT INTO MENUS (menu_id, shop_id, name, type, sort_order)
+VALUES 
+(11, 2, '컷', 'CATEGORY', 1),
+(12, 2, '컬러', 'CATEGORY', 2);
+
+INSERT INTO MENUS (menu_id, shop_id, category, name, price, duration, description, type)
+VALUES 
+(13, 2, '컷', '홍대 스타일 컷', 30000, 40, '트렌디한 스타일', 'MENU'),
+(14, 2, '컬러', '애쉬 그레이', 90000, 100, '탈색 1회 포함', 'MENU');
+
+
+-- 5-5. RESERVATIONS (Shop 2)
+-- 예약 11: 박감각 - 정고객 (오늘 14:00 KST -> 05:00 UTC)
+INSERT INTO RESERVATIONS (reservation_id, shop_id, customer_id, designer_id, start_time, end_time, status, request_memo, alarm_enabled, created_at)
+VALUES (11, 2, 13, 3, CONCAT(CURDATE(), ' 05:00:00'), CONCAT(CURDATE(), ' 06:40:00'), 'CONFIRMED', '홍대점 첫 방문입니다', TRUE, NOW());
+
+
+-- 5-6. RESERVATION_ITEMS (Shop 2)
+INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
+VALUES (11, 11, 14, '애쉬 그레이', 90000);
 
 -- Done
 SELECT 'Database initialized successfully!' as result;

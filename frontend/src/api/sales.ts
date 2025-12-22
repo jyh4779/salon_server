@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { API_BASE_URL } from '../constants/config';
+import { api } from './client';
 
 export interface DailySalesStats {
     totalSales: number;
@@ -40,8 +39,8 @@ export interface DailySalesData {
     reservations: SalesTransaction[];
 }
 
-export const getDailySales = async (date: string): Promise<DailySalesData> => {
-    const response = await axios.get(`${API_BASE_URL}/sales/daily`, {
+export const getDailySales = async (shopId: number, date: string): Promise<DailySalesData> => {
+    const response = await api.get(`/shops/${shopId}/sales/daily`, {
         params: { date }
     });
     return response.data;

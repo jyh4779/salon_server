@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Layout, Typography, Card, Table, DatePicker, Row, Col, Statistic, message, Tabs, Button } from 'antd';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { getDailySales, DailySalesData, SalesTransaction } from '../../api/sales';
 import { COLORS } from '../../constants/colors';
@@ -11,18 +11,20 @@ const { Title } = Typography;
 
 const SalesPage: React.FC = () => {
     const navigate = useNavigate();
+    const { shopId } = useParams<{ shopId: string }>();
     const [date, setDate] = useState(dayjs());
     const [data, setData] = useState<DailySalesData | null>(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         fetchSales(date.format('YYYY-MM-DD'));
-    }, [date]);
+    }, [date, shopId]);
 
     const fetchSales = async (dateStr: string) => {
+        if (!shopId) return;
         setLoading(true);
         try {
-            const result = await getDailySales(dateStr);
+            const result = await getDailySales(Number(shopId), dateStr);
             setData(result);
         } catch (error) {
             console.error(error);

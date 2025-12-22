@@ -17,13 +17,15 @@ interface ReservationDetailModalProps {
     onClose: () => void;
     reservationId: string | null;
     onUpdate: () => void;
+    shopId: number | null;
 }
 
 const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     isOpen,
     onClose,
     reservationId,
-    onUpdate
+    onUpdate,
+    shopId
 }) => {
     const [mode, setMode] = useState<'view' | 'edit'>('view');
     const [reservation, setReservation] = useState<ReservationDTO | null>(null);
@@ -44,9 +46,9 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
 
     // Fetch details
     useEffect(() => {
-        if (isOpen && reservationId) {
+        if (isOpen && reservationId && shopId) {
             setMode('view');
-            getReservation(reservationId)
+            getReservation(shopId, reservationId)
                 .then(data => setReservation(data))
                 .catch(err => {
                     console.error(err);
@@ -58,12 +60,12 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
             setLogMemo('');
             setLogPhotos([]);
         }
-    }, [isOpen, reservationId]);
+    }, [isOpen, reservationId, shopId]);
 
     // Fetch Visit Log
     useEffect(() => {
-        if (isOpen && reservationId && reservation?.status === 'COMPLETED') {
-            getVisitLogByReservation(parseInt(reservationId, 10))
+        if (isOpen && reservationId && shopId && reservation?.status === 'COMPLETED') {
+            getVisitLogByReservation(shopId, parseInt(reservationId, 10))
                 .then(data => {
                     if (data) {
                         setLogMemo(data.admin_memo || '');
@@ -72,17 +74,17 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                 })
                 .catch(console.error);
         }
-    }, [isOpen, reservationId, reservation?.status]);
+    }, [isOpen, reservationId, shopId, reservation?.status]);
 
     // Fetch helper data for Edit
     useEffect(() => {
-        if (mode === 'edit') {
+        if (mode === 'edit' && shopId) {
             const fetchData = async () => {
                 try {
                     const [dData, mData, sData] = await Promise.all([
-                        getDesigners(),
-                        getMenus(),
-                        getShop(1) // Default Shop ID
+                        getDesigners(shopId),
+                        getMenus(shopId),
+                        getShop(shopId)
                     ]);
                     setDesigners(dData);
                     setMenus(mData);
@@ -93,7 +95,7 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
             };
             fetchData();
         }
-    }, [mode]);
+    }, [mode, shopId]);
 
     // Initialize Form on Edit Mode
     useEffect(() => {
@@ -116,10 +118,10 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     };
 
     const handlePaymentConfirm = async (paymentData: { totalPrice: number; paymentType: string; paymentMemo: string }) => {
-        if (!reservationId) return;
+        if (!reservationId || !shopId) return;
         setIsCompleting(true);
         try {
-            await completeReservation(reservationId, paymentData);
+            await completeReservation(shopId, reservationId, paymentData);
             message.success('시술 및 결제가 완료되었습니다.');
             onUpdate();
             setIsPaymentOpen(false);
@@ -133,9 +135,9 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     };
 
     const handleDelete = async () => {
-        if (!reservationId) return;
+        if (!reservationId || !shopId) return;
         try {
-            await deleteReservation(reservationId);
+            await deleteReservation(shopId, reservationId);
             message.success(STRINGS.COMMON.DELETE + '되었습니다.');
             onUpdate(); // Refetch calendar
             onClose();
@@ -171,7 +173,7 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
             const submitUpdate = async (force: boolean) => {
                 try {
                     const finalData = { ...updateData, force };
-                    const response = await updateReservation(reservationId, finalData);
+                    const response = await updateReservation(shopId, reservationId, finalData);
 
                     if (response && response.status === 'CONFLICT') {
                         Modal.confirm({
@@ -209,16 +211,19 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     };
 
     const handleSaveVisitLog = async () => {
-        if (!reservationId || !reservation) return;
+        if (!reservationId || !reservation || !shopId) return;
         try {
-            await createVisitLog({
-                reservation_id: parseInt(String(reservationId), 10),
-                customer_id: reservation.customer_id,
-                designer_id: reservation.designer_id,
+            const logData = {
+                reservation_id: Number(reservationId),
+                customer_id: Number(reservation.customer_id),
+                designer_id: Number(reservation.designer_id),
                 admin_memo: logMemo,
                 photo_urls: logPhotos
-            });
+            };
+            await createVisitLog(shopId, logData);
             message.success('시술 기록이 저장되었습니다.');
+            // setIsLogModalOpen(false); // This variable is not defined in the provided context, so it's omitted.
+            onUpdate(); // Re-fetch to update the UI, assuming this is the intended behavior for fetchVisitLog()
         } catch (e) {
             console.error(e);
             message.error('시술 기록 저장 실패');

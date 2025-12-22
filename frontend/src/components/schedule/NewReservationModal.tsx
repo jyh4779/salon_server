@@ -18,6 +18,7 @@ interface NewReservationModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: CreateReservationDTO) => void;
+    shopId: number | null;
     initialData?: {
         date?: dayjs.Dayjs;
         designerId?: string; // string because activeDesignerId is string 'all' or 'number'
@@ -27,7 +28,7 @@ interface NewReservationModalProps {
 const { Option } = Select;
 const stringSet = STRINGS.SCHEDULE.NEW_RESERVATION_MODAL;
 
-const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
+const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClose, onSubmit, initialData, shopId }) => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
 
@@ -40,11 +41,12 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
     React.useEffect(() => {
         if (isOpen) {
             const fetchData = async () => {
+                if (!shopId) return;
                 try {
                     const [loadedDesigners, loadedMenus, loadedShop] = await Promise.all([
-                        getDesigners(),
-                        getMenus(),
-                        getShop(1) // Default Shop ID 1
+                        getDesigners(shopId),
+                        getMenus(shopId),
+                        getShop(shopId)
                     ]);
                     setDesigners(loadedDesigners);
                     setMenus(loadedMenus);
@@ -144,9 +146,10 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
             return;
         }
 
+        if (!shopId) return;
         setIsSearching(true);
         try {
-            const results = await searchUsers(value);
+            const results = await searchUsers(value); // searchUsers currently doesn't use shopId, but we might need to later
             setUserOptions(results);
         } catch (error) {
             console.error('User search failed:', error);
@@ -156,6 +159,7 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
     }, 500);
 
     const handleOk = async () => {
+        if (!shopId) return;
         try {
             const values = await form.validateFields();
             setLoading(true);
@@ -177,7 +181,7 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
             const end_time = dayjs(start_time).add(duration, 'minute').format('YYYY-MM-DDTHH:mm:ss');
 
             const reservationData: CreateReservationDTO = {
-                shop_id: 1, // Default Shop ID
+                shop_id: shopId,
                 customer_id: Number(values.customer_id),
                 // customer_name/phone removed as backend handles lookup by ID
                 designer_id: Number(values.designerId),
@@ -192,7 +196,7 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
             const submitReservation = async (force: boolean = false) => {
                 try {
                     const payload = { ...reservationData, force };
-                    const response = await createReservation(payload);
+                    const response = await createReservation(shopId, payload);
 
                     // Handle 200 OK Conflict (Shop Closed, Hours, Work/Lunch Conflict)
                     if (response && response.status === 'CONFLICT') {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout, Typography, Card, Descriptions, Tag, Table, List, Flex, Skeleton, Button, message, Modal, Input, Space } from 'antd';
 import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
-import { getCustomer, CustomerDetail, createMemo } from '../../api/customers';
+import { getCustomer, createMemo, CustomerDetail } from '../../api/customers';
 import { formatPhoneNumber, formatDateTime, formatDate } from '../../utils/format';
 import ReservationDetailModal from '../../components/schedule/ReservationDetailModal';
 import CustomerGallery from './components/CustomerGallery';
@@ -11,7 +11,7 @@ const { Content } = Layout;
 const { Title, Text } = Typography;
 
 const CustomerDetailPage: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
+    const { shopId, id } = useParams<{ shopId: string; id: string }>();
     const navigate = useNavigate();
     const [customer, setCustomer] = useState<CustomerDetail | null>(null);
     const [loading, setLoading] = useState(true);
@@ -22,20 +22,20 @@ const CustomerDetailPage: React.FC = () => {
     const [isMemoSubmitting, setIsMemoSubmitting] = useState(false);
 
     useEffect(() => {
-        if (id) {
+        if (id && shopId) {
             fetchCustomer(parseInt(id));
         }
-    }, [id]);
+    }, [id, shopId]);
 
     const fetchCustomer = async (customerId: number) => {
+        if (!shopId) return;
+        setLoading(true);
         try {
-            setLoading(true);
-            const data = await getCustomer(customerId);
+            const data = await getCustomer(Number(shopId), customerId);
             setCustomer(data);
         } catch (error) {
-            console.error(error);
+            console.error('Failed to fetch customer:', error);
             message.error('고객 정보를 불러오는데 실패했습니다.');
-            navigate('/client');
         } finally {
             setLoading(false);
         }
@@ -46,17 +46,17 @@ const CustomerDetailPage: React.FC = () => {
             message.warning('메모 내용을 입력해주세요.');
             return;
         }
-        if (!id) return;
+        if (!id || !shopId) return;
 
         try {
             setIsMemoSubmitting(true);
-            await createMemo(parseInt(id), memoContent);
+            await createMemo(Number(shopId), parseInt(id), memoContent);
             message.success('메모가 저장되었습니다.');
             setMemoContent('');
             setIsMemoModalOpen(false);
             fetchCustomer(parseInt(id)); // Refresh list
         } catch (error) {
-            console.error(error);
+            console.error('Memo save failed:', error);
             message.error('메모 저장에 실패했습니다.');
         } finally {
             setIsMemoSubmitting(false);
@@ -200,6 +200,7 @@ const CustomerDetailPage: React.FC = () => {
                     {/* Photo Gallery */}
                     <Card title="시술 갤러리" size="small">
                         <CustomerGallery
+                            shopId={shopId ? Number(shopId) : 1}
                             customerId={Number(id)}
                             onReservationClick={(reservationId) => {
                                 setSelectedReservationId(reservationId);
@@ -213,6 +214,7 @@ const CustomerDetailPage: React.FC = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 reservationId={selectedReservationId}
+                shopId={shopId ? Number(shopId) : null}
                 onUpdate={() => {
                     if (id) fetchCustomer(parseInt(id));
                 }}

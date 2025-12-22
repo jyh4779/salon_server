@@ -113,14 +113,23 @@ export class DesignersService {
         }
 
         // 3. Create Designer linked to user
+        const timeFields = ['work_start', 'work_end', 'lunch_start', 'lunch_end'];
+        const designerData: any = {
+            shop_id: BigInt(shopId),
+            user_id: user.user_id,
+            intro_text: data.intro_text,
+            profile_img: data.profile_img,
+            is_active: true,
+        };
+
+        timeFields.forEach(field => {
+            if (data[field]) {
+                designerData[field] = this.timeService.parseUtcTime(data[field]);
+            }
+        });
+
         const designer = await this.prisma.dESIGNERS.create({
-            data: {
-                shop_id: BigInt(shopId),
-                user_id: user.user_id,
-                intro_text: data.intro_text,
-                profile_img: data.profile_img,
-                is_active: true,
-            },
+            data: designerData,
             include: { USERS: true }
         });
 
@@ -129,6 +138,10 @@ export class DesignersService {
             designer_id: designer.designer_id.toString(),
             user_id: designer.user_id.toString(),
             shop_id: designer.shop_id.toString(),
+            work_start: this.timeService.toUtcTimeStr(designer.work_start),
+            work_end: this.timeService.toUtcTimeStr(designer.work_end),
+            lunch_start: this.timeService.toUtcTimeStr(designer.lunch_start),
+            lunch_end: this.timeService.toUtcTimeStr(designer.lunch_end),
             userName: designer.USERS.name,
             userPhone: designer.USERS.phone,
         };

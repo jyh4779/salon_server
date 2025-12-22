@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-import { API_BASE_URL } from '../constants/config';
+import { api } from './client';
 
 
 export interface CustomerStats {
@@ -16,8 +14,8 @@ export interface CustomerStats {
     memo: string;
 }
 
-export const getCustomers = async (search?: string): Promise<CustomerStats[]> => {
-    const response = await axios.get(`${API_BASE_URL}/customers`, {
+export const getCustomers = async (shopId: number, search?: string): Promise<CustomerStats[]> => {
+    const response = await api.get(`/shops/${shopId}/customers`, {
         params: { search }
     });
     return response.data;
@@ -41,11 +39,11 @@ export interface CustomerDetail extends CustomerStats {
     }[];
 }
 
-export const getCustomer = async (id: number): Promise<CustomerDetail> => {
-    const response = await axios.get(`${API_BASE_URL}/customers/${id}`);
+export const getCustomer = async (shopId: number, id: number): Promise<CustomerDetail> => {
+    const response = await api.get(`/shops/${shopId}/customers/${id}`);
     return response.data;
 };
 
-export const createMemo = async (id: number, content: string): Promise<void> => {
-    await axios.post(`${API_BASE_URL}/customers/${id}/memos`, { content });
+export const createMemo = async (shopId: number, id: number, content: string): Promise<void> => {
+    await api.post(`/shops/${shopId}/customers/${id}/memos`, { content });
 };

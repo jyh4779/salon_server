@@ -16,26 +16,27 @@ export class ReservationsService {
         private timeService: TimeService
     ) { }
 
-    async findAll(query: GetReservationsDto) {
+    async findAll(shopId: number, query: GetReservationsDto) {
         const { startDate, endDate } = query;
 
-        const reservations = await this.reservationsRepository.getReservations(startDate, endDate);
+        const reservations = await this.reservationsRepository.getReservations(shopId, startDate, endDate);
 
         return reservations.map(reservation => ({
             ...reservation,
-            start_time: this.timeService.format(reservation.start_time),
-            end_time: this.timeService.format(reservation.end_time),
+            start_time: reservation.start_time.toISOString(),
+            end_time: reservation.end_time.toISOString(),
         }));
     }
 
-    async findOne(id: number) {
-        const reservation = await this.reservationsRepository.getReservationById(id);
+    async findOne(shopId: number, id: number) {
+        const reservation = await this.reservationsRepository.getReservationById(shopId, id);
         if (!reservation) return null;
 
         return {
             ...reservation,
-            start_time: this.timeService.format(reservation.start_time),
-            end_time: this.timeService.format(reservation.end_time),
+            shop_id: Number(reservation.shop_id), // BigInt -> Number
+            start_time: reservation.start_time.toISOString(),
+            end_time: reservation.end_time.toISOString(),
         };
     }
 
@@ -68,38 +69,32 @@ export class ReservationsService {
         });
     }
 
-    async update(id: number, updateReservationDto: UpdateReservationDto) {
+    async update(shopId: number, id: number, updateReservationDto: UpdateReservationDto) {
         if (updateReservationDto.start_time || updateReservationDto.end_time || updateReservationDto.designer_id) {
-            const currentReservation = await this.findOne(id);
+            const currentReservation = await this.findOne(shopId, id);
             if (!currentReservation) throw new BadRequestException('Reservation not found');
 
-            const shopId = updateReservationDto.shop_id || currentReservation.shop_id || 1;
+            // shopId is already validated by guard/controller param
             const designerId = updateReservationDto.designer_id || Number(currentReservation.designer_id);
             const startTime = updateReservationDto.start_time || currentReservation.start_time;
             const endTime = updateReservationDto.end_time || currentReservation.end_time;
 
-            const validation = await this.validateAvailability(
-                Number(shopId),
-                Number(designerId),
-                startTime,
-                endTime,
-                updateReservationDto.force
-            );
+            const conflict = await this.validateAvailability(shopId, designerId, startTime, endTime, updateReservationDto.force);
 
-            if (validation && validation.status === 'CONFLICT') {
-                return validation;
+            if (conflict && conflict.status === 'CONFLICT') {
+                return conflict;
             }
         }
 
-        return this.reservationsRepository.updateReservation(id, updateReservationDto);
+        return this.reservationsRepository.updateReservation(shopId, id, updateReservationDto);
     }
 
-    async complete(id: number, completeReservationDto: CompleteReservationDto) {
-        return this.reservationsRepository.completeReservation(id, completeReservationDto);
+    async complete(shopId: number, id: number, completeReservationDto: CompleteReservationDto) {
+        return this.reservationsRepository.completeReservation(shopId, id, completeReservationDto);
     }
 
-    async remove(id: number) {
-        return this.reservationsRepository.deleteReservation(id);
+    async remove(shopId: number, id: number) {
+        return this.reservationsRepository.deleteReservation(shopId, id);
     }
 
     private async validateAvailability(shopId: number, designerId: number, start: string, end: string, force: boolean = false) {

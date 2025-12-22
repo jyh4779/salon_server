@@ -20,6 +20,11 @@ export const getShop = async (id: number = 1): Promise<ShopDTO> => {
     return response.data;
 };
 
+export const getMyShop = async (): Promise<ShopDTO> => {
+    const response = await api.get(`/shops/my-shop`);
+    return response.data;
+};
+
 export const updateShop = async (id: number = 1, data: Partial<ShopDTO>): Promise<ShopDTO> => {
     const response = await api.patch(`/shops/${id}`, data);
     return response.data;

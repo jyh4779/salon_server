@@ -15,9 +15,24 @@ export class ShopsService {
             where: { shop_id: BigInt(id) },
         });
 
-        // Serialize BigInt for JSON response if needed
         if (!shop) return null;
 
+        return this.mapToDto(shop);
+    }
+
+    async findMyShop(ownerId: number) {
+        console.log(`[ShopsService] findMyShop calling with ownerId: ${ownerId} (${typeof ownerId})`);
+        const shop = await this.prisma.sHOPS.findFirst({
+            where: { owner_id: BigInt(ownerId) },
+        });
+        console.log(`[ShopsService] findMyShop result:`, shop ? `Shop ID ${shop.shop_id}` : 'null');
+
+        if (!shop) return null;
+
+        return this.mapToDto(shop);
+    }
+
+    private mapToDto(shop: any) {
         return {
             ...shop,
             shop_id: shop.shop_id.toString(),

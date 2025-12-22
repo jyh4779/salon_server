@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Input, Button, Layout, theme, Typography, Tag, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { formatPhoneNumber, formatDate } from '../../utils/format';
 import { getCustomers, CustomerStats } from '../../api/customers';
 import NewCustomerModal from '../../components/common/NewCustomerModal';
@@ -11,6 +11,7 @@ const { Content } = Layout;
 const { Title } = Typography;
 
 const CustomerPage: React.FC = () => {
+    const { shopId } = useParams<{ shopId: string }>();
     const navigate = useNavigate();
     const {
         token: { colorBgContainer, borderRadiusLG },
@@ -22,9 +23,10 @@ const CustomerPage: React.FC = () => {
     const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
 
     const fetchCustomers = async (search?: string) => {
+        if (!shopId) return;
         setLoading(true);
         try {
-            const data = await getCustomers(search);
+            const data = await getCustomers(Number(shopId), search);
             setCustomers(data);
         } catch (error) {
             console.error('Failed to fetch customers:', error);
@@ -35,7 +37,7 @@ const CustomerPage: React.FC = () => {
 
     useEffect(() => {
         fetchCustomers();
-    }, []);
+    }, [shopId]);
 
     const handleSearch = (value: string) => {
         setSearchText(value);
@@ -48,7 +50,7 @@ const CustomerPage: React.FC = () => {
             dataIndex: 'name',
             key: 'name',
             render: (text, record) => (
-                <a onClick={() => navigate(`/client/${record.id}`)} style={{ fontWeight: 'bold' }}>
+                <a onClick={() => navigate(`/shops/${shopId}/client/${record.id}`)} style={{ fontWeight: 'bold' }}>
                     {text}
                 </a>
             ),
@@ -108,7 +110,7 @@ const CustomerPage: React.FC = () => {
             dataIndex: 'total_pay',
             key: 'total_pay',
             sorter: (a, b) => a.total_pay - b.total_pay,
-            render: (price) => `${price.toLocaleString()}원`,
+            render: (price) => `${(price || 0).toLocaleString()}원`,
         },
         {
             title: '메모',

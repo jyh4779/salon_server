@@ -48,9 +48,13 @@ export class MenusService {
         };
     }
 
-    async update(menuId: number, data: any) {
+    async update(shopId: number, menuId: number, data: any) {
+        // Verify ownership/shop
         const menu = await this.prisma.mENUS.update({
-            where: { menu_id: BigInt(menuId) },
+            where: {
+                menu_id: BigInt(menuId),
+                shop_id: BigInt(shopId)
+            },
             data: data
         });
         return {
@@ -62,9 +66,12 @@ export class MenusService {
         };
     }
 
-    async remove(menuId: number) {
+    async remove(shopId: number, menuId: number) {
         const menu = await this.prisma.mENUS.update({
-            where: { menu_id: BigInt(menuId) },
+            where: {
+                menu_id: BigInt(menuId),
+                shop_id: BigInt(shopId)
+            },
             data: { is_deleted: true }
         });
         return {

@@ -6,7 +6,7 @@ import { CreateVisitLogDto } from './dto/create-visit-log.dto';
 export class VisitLogsService {
     constructor(private prisma: PrismaService) { }
 
-    async create(createVisitLogDto: CreateVisitLogDto) {
+    async create(shopId: number, createVisitLogDto: CreateVisitLogDto) {
         // Convert string[] to JSON string for DB storage
         const photoUrlsJson = createVisitLogDto.photo_urls
             ? JSON.stringify(createVisitLogDto.photo_urls)
@@ -26,21 +26,38 @@ export class VisitLogsService {
         return this.mapToDto(log);
     }
 
-    async findByReservation(reservationId: number) {
-        const log = await this.prisma.vISIT_LOGS.findUnique({
-            where: { reservation_id: BigInt(reservationId) },
+    async findByReservation(shopId: number, reservationId: number) {
+        const log = await this.prisma.vISIT_LOGS.findFirst({
+            where: {
+                reservation_id: BigInt(reservationId),
+                RESERVATIONS: {
+                    shop_id: BigInt(shopId)
+                }
+            },
+            include: {
+                RESERVATIONS: {
+                    include: { RESERVATION_ITEMS: { include: { MENUS: true } } }
+                }
+            }
         });
 
         if (!log) return null;
         return this.mapToDto(log);
     }
 
-    async findByCustomer(customerId: number, page: number = 1, limit: number = 9) {
+    async findByCustomer(shopId: number, customerId: number, page: number = 1, limit: number = 9) {
         const skip = (page - 1) * limit;
+
+        const whereCondition = {
+            customer_id: BigInt(customerId),
+            RESERVATIONS: {
+                shop_id: BigInt(shopId)
+            }
+        };
 
         const [logs, total] = await Promise.all([
             this.prisma.vISIT_LOGS.findMany({
-                where: { customer_id: BigInt(customerId) },
+                where: whereCondition,
                 orderBy: { visited_at: 'desc' },
                 skip,
                 take: limit,
@@ -58,7 +75,7 @@ export class VisitLogsService {
                 }
             }),
             this.prisma.vISIT_LOGS.count({
-                where: { customer_id: BigInt(customerId) },
+                where: whereCondition,
             })
         ]);
 

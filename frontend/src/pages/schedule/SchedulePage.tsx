@@ -6,11 +6,13 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import koLocale from '@fullcalendar/core/locales/ko';
+import { useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import DateNavigator from '../../components/schedule/DateNavigator';
 import { RESERVATION_STATUS_COLORS } from '../../constants/strings';
 import { COLORS } from '../../constants/colors';
 import { useReservations } from '../../hooks/useReservations';
+import { getDesigners } from '../../api/designer';
 import NewReservationModal from '../../components/schedule/NewReservationModal';
 import ReservationDetailModal from '../../components/schedule/ReservationDetailModal';
 import { CreateReservationDTO } from '../../types/reservation';
@@ -36,46 +38,41 @@ const CalendarWrapper = styled.div`
 const SchedulePage: React.FC = () => {
     // ... (Refs and State remain same)
     const calendarRef = useRef<FullCalendar>(null);
-    const [currentDate, setCurrentDate] = useState<Date>(new Date());
-    const [viewType, setViewType] = useState<string>('timeGridDay');
+    const { shopId } = useParams<{ shopId: string }>();
+    const [currentDate, setCurrentDate] = useState(dayjs());
+    const [viewType, setViewType] = useState<'timeGridWeek' | 'timeGridDay' | 'dayGridMonth'>('timeGridWeek');
     const [activeDesignerId, setActiveDesignerId] = useState<string>('all');
-
-    // ... (Data Fetching remains same)
+    const [isReservationModalOpen, setIsReservationModalOpen] = useState(false); // Renamed from isModalOpen to match original
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false); // Renamed from detailModalOpen to match original
+    const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
     const [designers, setDesigners] = useState<any[]>([]);
+    const [modalInitialData, setModalInitialData] = useState<{ date?: dayjs.Dayjs, designerId?: string } | null>(null); // Type kept from original
     const [shopInfo, setShopInfo] = useState<ShopDTO | null>(null);
 
     React.useEffect(() => {
-        // ... (Fetch logic remains same)
+        if (!shopId) return;
         const fetchData = async () => {
             try {
-                // Fetch Shop Info (Default 1 for now)
-                const shop = await getShop(1);
+                // Fetch Shop Info
+                const shop = await getShop(Number(shopId));
                 setShopInfo(shop);
 
                 // Fetch Designers
-                const { getDesigners } = await import('../../api/designer');
-                const data = await getDesigners();
+                const data = await getDesigners(Number(shopId));
                 setDesigners([
                     { id: 'all', title: '전체 보기', data: null }, // Option for 'All'
                     ...data.map(d => ({
-                        id: d.designer_id.toString(),
+                        id: d.designer_id.toString(), // Ensure ID is string for Tabs
                         title: d.USERS.name,
-                        data: d // Store full DTO
+                        data: d
                     }))
                 ]);
-            } catch (error) {
-                console.error('Failed to load initial data:', error);
+            } catch (e) {
+                console.error(e);
             }
         };
         fetchData();
-    }, []);
-
-    const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
-    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-    const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
-
-    // State for passing clicked date/resource to Modal
-    const [modalInitialData, setModalInitialData] = useState<{ date?: dayjs.Dayjs, designerId?: string } | null>(null);
+    }, [shopId]);
 
     const handleEventClick = (info: EventClickArg) => {
         const reservationId = info.event.id;
@@ -127,7 +124,7 @@ const SchedulePage: React.FC = () => {
         };
     }, [currentDate, viewType]);
 
-    const { data: reservations, refetch } = useReservations(queryParams);
+    const { data: reservations, refetch } = useReservations(shopId ? Number(shopId) : null, queryParams);
 
     // ... (Helper functions remain same)
     const dayToJsonInt = (dayStr: string) => {
@@ -220,32 +217,40 @@ const SchedulePage: React.FC = () => {
     }, [reservations, activeDesignerId, shopInfo, designers]);
 
     // ... (Navigation Handlers remain same)
+    const handleDateSelect = (date: Date) => {
+        const calendarApi = calendarRef.current?.getApi();
+        if (calendarApi) {
+            calendarApi.gotoDate(date);
+            setCurrentDate(dayjs(date));
+        }
+    };
+
     const handlePrev = () => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
             calendarApi.prev();
-            setCurrentDate(calendarApi.getDate());
+            setCurrentDate(dayjs(calendarApi.getDate()));
         }
     };
     const handleNext = () => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
             calendarApi.next();
-            setCurrentDate(calendarApi.getDate());
+            setCurrentDate(dayjs(calendarApi.getDate()));
         }
     };
     const handleToday = () => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
             calendarApi.today();
-            setCurrentDate(calendarApi.getDate());
+            setCurrentDate(dayjs(calendarApi.getDate()));
         }
     };
     const handleViewChange = (value: string) => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
             calendarApi.changeView(value);
-            setViewType(value);
+            setViewType(value as 'timeGridWeek' | 'timeGridDay' | 'dayGridMonth');
         }
     };
 
@@ -294,10 +299,11 @@ const SchedulePage: React.FC = () => {
                     </div>
 
                     <DateNavigator
-                        currentDate={currentDate}
+                        currentDate={currentDate.toDate()}
                         onPrev={handlePrev}
                         onNext={handleNext}
                         onToday={handleToday}
+                        onDateSelect={handleDateSelect}
                         viewType={viewType}
                     />
 
@@ -320,8 +326,8 @@ const SchedulePage: React.FC = () => {
                         <FullCalendar
                             ref={calendarRef}
                             plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]} // No resource plugin
-                            initialView="timeGridDay"
-                            initialDate={currentDate}
+                            initialView="timeGridWeek" // Changed initial view
+                            initialDate={currentDate.toDate()}
                             locale={koLocale}
                             headerToolbar={false}
                             slotMinTime={shopInfo?.open_time ? `${shopInfo.open_time}:00` : "10:00:00"}
@@ -354,6 +360,7 @@ const SchedulePage: React.FC = () => {
                 onClose={handleCloseModal}
                 onSubmit={handleCreateReservation}
                 initialData={modalInitialData}
+                shopId={shopId ? Number(shopId) : null}
             />
 
             <ReservationDetailModal
@@ -361,6 +368,7 @@ const SchedulePage: React.FC = () => {
                 reservationId={selectedReservationId}
                 onClose={handleCloseDetailModal}
                 onUpdate={handleUpdateReservation}
+                shopId={shopId ? Number(shopId) : null}
             />
         </Content>
     );

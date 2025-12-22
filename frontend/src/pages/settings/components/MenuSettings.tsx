@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Avatar } from 'antd';
 import { MenuDTO, getMenus, createMenu, updateMenu, deleteMenu } from '../../../api/menu';
 import ImageUpload from '../../../components/common/ImageUpload';
@@ -6,6 +7,7 @@ import ImageUpload from '../../../components/common/ImageUpload';
 
 
 const MenuSettings: React.FC = () => {
+    const { shopId } = useParams();
     const [categories, setCategories] = useState<MenuDTO[]>([]);
     const [menuItems, setMenuItems] = useState<MenuDTO[]>([]);
     const [loading, setLoading] = useState(false);
@@ -16,7 +18,8 @@ const MenuSettings: React.FC = () => {
     const fetchMenus = async () => {
         setLoading(true);
         try {
-            const data = await getMenus(1);
+            if (!shopId) return;
+            const data = await getMenus(Number(shopId));
             // Separate Categories and Items
             const cats = data.filter(m => m.type === 'CATEGORY').sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
             // Only show Items (type is not CATEGORY)
@@ -32,8 +35,8 @@ const MenuSettings: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchMenus();
-    }, []);
+        if (shopId) fetchMenus();
+    }, [shopId]);
 
     useEffect(() => {
         if (isModalOpen) {
@@ -59,8 +62,9 @@ const MenuSettings: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
+        if (!shopId) return;
         try {
-            await deleteMenu(parseInt(id, 10));
+            await deleteMenu(Number(shopId), parseInt(id, 10));
             message.success('삭제되었습니다.');
             fetchMenus();
         } catch (error) {
@@ -74,10 +78,10 @@ const MenuSettings: React.FC = () => {
             const payload = { ...values, type: 'MENU' }; // Ensure type is MENU
 
             if (editingMenu) {
-                await updateMenu(parseInt(editingMenu.menu_id, 10), payload);
+                await updateMenu(Number(shopId), parseInt(editingMenu.menu_id, 10), payload);
                 message.success('수정되었습니다.');
             } else {
-                await createMenu(1, payload);
+                await createMenu(Number(shopId), payload);
                 message.success('생성되었습니다.');
             }
 

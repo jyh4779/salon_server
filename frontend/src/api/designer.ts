@@ -6,7 +6,7 @@ export interface DesignerDTO {
     user_id: string;
     USERS: {
         name: string;
-        phone?: string;
+        phone: string; // Made required based on typical usage, check DTO
     };
     intro_text?: string;
     profile_img?: string;
@@ -18,21 +18,17 @@ export interface DesignerDTO {
     is_active?: boolean;
 }
 
-export const getDesigners = async (shopId: number = 1): Promise<DesignerDTO[]> => {
-    const response = await api.get(`/designers`, {
-        params: { shop_id: shopId }
-    });
+export const getDesigners = async (shopId: number): Promise<DesignerDTO[]> => {
+    const response = await api.get(`/shops/${shopId}/designers`);
     return response.data;
 };
 
-export const updateDesigner = async (id: number, data: Partial<DesignerDTO>): Promise<DesignerDTO> => {
-    const response = await api.patch(`/designers/${id}`, data);
+export const createDesigner = async (shopId: number, data: Partial<DesignerDTO>): Promise<DesignerDTO> => {
+    const response = await api.post(`/shops/${shopId}/designers`, data);
     return response.data;
 };
 
-export const createDesigner = async (shopId: number, data: { name: string; phone: string; intro_text?: string; profile_img?: string }): Promise<DesignerDTO> => {
-    const response = await api.post(`/designers`, data, {
-        params: { shop_id: shopId }
-    });
+export const updateDesigner = async (shopId: number, id: number, data: Partial<DesignerDTO>): Promise<DesignerDTO> => {
+    const response = await api.patch(`/shops/${shopId}/designers/${id}`, data);
     return response.data;
 };

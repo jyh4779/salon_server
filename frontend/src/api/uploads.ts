@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { API_BASE_URL } from '../constants/config';
+import { api } from './client';
 
 export interface UploadResponse {
     url: string;
@@ -10,8 +9,8 @@ export const uploadImage = async (file: File, category: string): Promise<string>
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await axios.post<UploadResponse>(
-        `${API_BASE_URL}/uploads/${category}`,
+    const response = await api.post<UploadResponse>(
+        `/uploads/${category}`,
         formData,
         {
             headers: {

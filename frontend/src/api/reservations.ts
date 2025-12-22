@@ -3,25 +3,25 @@ import { ReservationDTO, GetReservationsParams, CreateReservationDTO } from '../
 
 // Base URL is handled by api client instance
 
-export const getReservations = async (params: GetReservationsParams): Promise<ReservationDTO[]> => {
-    const response = await api.get('/reservations', {
+export const getReservations = async (shopId: number, params: GetReservationsParams): Promise<ReservationDTO[]> => {
+    const response = await api.get(`/shops/${shopId}/reservations`, {
         params,
     });
     return response.data;
 };
 
-export const createReservation = async (data: CreateReservationDTO): Promise<any> => {
-    const response = await api.post('/reservations', data);
+export const createReservation = async (shopId: number, data: CreateReservationDTO): Promise<any> => {
+    const response = await api.post(`/shops/${shopId}/reservations`, data);
     return response.data;
 };
 
-export const getReservation = async (id: string): Promise<ReservationDTO> => {
-    const response = await api.get(`/reservations/${id}`);
+export const getReservation = async (shopId: number, id: string): Promise<ReservationDTO> => {
+    const response = await api.get(`/shops/${shopId}/reservations/${id}`);
     return response.data;
 };
 
-export const updateReservation = async (id: string, data: Partial<CreateReservationDTO>): Promise<any> => {
-    const response = await api.patch(`/reservations/${id}`, data);
+export const updateReservation = async (shopId: number, id: string, data: Partial<CreateReservationDTO>): Promise<any> => {
+    const response = await api.patch(`/shops/${shopId}/reservations/${id}`, data);
     return response.data;
 };
 
@@ -31,10 +31,10 @@ export interface CompleteReservationData {
     paymentMemo?: string;
 }
 
-export const completeReservation = async (id: string, data: CompleteReservationData): Promise<void> => {
-    await api.post(`/reservations/${id}/complete`, data);
+export const completeReservation = async (shopId: number, id: string, data: CompleteReservationData): Promise<void> => {
+    await api.post(`/shops/${shopId}/reservations/${id}/complete`, data);
 };
 
-export const deleteReservation = async (id: string): Promise<void> => {
-    await api.delete(`/reservations/${id}`);
+export const deleteReservation = async (shopId: number, id: string): Promise<void> => {
+    await api.delete(`/shops/${shopId}/reservations/${id}`);
 };

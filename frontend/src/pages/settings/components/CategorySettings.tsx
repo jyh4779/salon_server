@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Table, Button, Modal, Form, Input, InputNumber, message, Popconfirm } from 'antd';
 import { MenuDTO, getMenus, createMenu, updateMenu, deleteMenu } from '../../../api/menu';
 
 const CategorySettings: React.FC = () => {
+    const { shopId } = useParams();
     const [categories, setCategories] = useState<MenuDTO[]>([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -13,7 +15,8 @@ const CategorySettings: React.FC = () => {
     const fetchCategories = async () => {
         setLoading(true);
         try {
-            const data = await getMenus(1);
+            if (!shopId) return;
+            const data = await getMenus(Number(shopId));
             // Filter only categories and sort by sort_order
             const cats = data
                 .filter(m => m.type === 'CATEGORY')
@@ -27,8 +30,8 @@ const CategorySettings: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchCategories();
-    }, []);
+        if (shopId) fetchCategories();
+    }, [shopId]);
 
     useEffect(() => {
         if (isModalOpen) {
@@ -52,8 +55,9 @@ const CategorySettings: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
+        if (!shopId) return;
         try {
-            await deleteMenu(parseInt(id, 10));
+            await deleteMenu(Number(shopId), parseInt(id, 10));
             message.success('카테고리가 삭제되었습니다.');
             fetchCategories();
         } catch (error) {
@@ -73,10 +77,10 @@ const CategorySettings: React.FC = () => {
             const payload = { ...values, type: 'CATEGORY' };
 
             if (editingCategory) {
-                await updateMenu(parseInt(editingCategory.menu_id, 10), payload);
+                await updateMenu(Number(shopId), parseInt(editingCategory.menu_id, 10), payload);
                 message.success('수정되었습니다.');
             } else {
-                await createMenu(1, payload);
+                await createMenu(Number(shopId), payload);
                 message.success('생성되었습니다.');
             }
 

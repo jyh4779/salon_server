@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Table, Button, Modal, Form, Input, TimePicker, Checkbox, Switch, message, Space, Avatar } from 'antd';
 import { DesignerDTO, getDesigners, updateDesigner, createDesigner } from '../../../api/designer';
 import { formatPhoneNumber } from '../../../utils/format';
@@ -17,6 +18,7 @@ const daysOptions = [
 ];
 
 const DesignerSettings: React.FC = () => {
+    const { shopId } = useParams<{ shopId: string }>();
     const [designers, setDesigners] = useState<DesignerDTO[]>([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,9 +26,10 @@ const DesignerSettings: React.FC = () => {
     const [form] = Form.useForm();
 
     const fetchDesigners = async () => {
+        if (!shopId) return;
         setLoading(true);
         try {
-            const data = await getDesigners(1);
+            const data = await getDesigners(Number(shopId));
             setDesigners(data);
         } catch (error) {
             message.error('디자이너 목록을 불러오는데 실패했습니다.');
@@ -37,7 +40,7 @@ const DesignerSettings: React.FC = () => {
 
     useEffect(() => {
         fetchDesigners();
-    }, []);
+    }, [shopId]);
 
     const handleEdit = (designer: DesignerDTO) => {
         setEditingDesigner(designer);
@@ -90,8 +93,10 @@ const DesignerSettings: React.FC = () => {
                     name: values.name,
                     phone: values.phone,
                 } as any;
-                await updateDesigner(parseInt(editingDesigner.designer_id, 10), payload);
-                message.success('수정되었습니다.');
+                if (shopId) {
+                    await updateDesigner(Number(shopId), parseInt(editingDesigner.designer_id, 10), payload);
+                    message.success('수정되었습니다.');
+                }
             } else {
                 // Create Logic
                 const payload = {
@@ -100,8 +105,10 @@ const DesignerSettings: React.FC = () => {
                     intro_text: values.intro_text,
                     profile_img: values.profile_img,
                 };
-                await createDesigner(1, payload); // Default shop 1
-                message.success('추가되었습니다.');
+                if (shopId) {
+                    await createDesigner(Number(shopId), payload);
+                    message.success('추가되었습니다.');
+                }
             }
 
             setIsModalOpen(false);

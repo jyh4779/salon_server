@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Layout, Menu, theme, Button, Space, Typography, Avatar, Flex } from 'antd';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
     CalendarOutlined,
     UserOutlined,
@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 const { Header, Sider, Content } = Layout;
 
 const MainLayout: React.FC = () => {
+    const { shopId } = useParams<{ shopId: string }>();
     const [collapsed, setCollapsed] = useState(false);
     const {
         token: { colorBgContainer },
@@ -25,22 +26,22 @@ const MainLayout: React.FC = () => {
 
     const menuItems = [
         {
-            key: '/schedule',
+            key: `/shops/${shopId}/schedule`,
             icon: <CalendarOutlined />,
             label: STRINGS.MENU.SCHEDULE,
         },
         {
-            key: '/client',
+            key: `/shops/${shopId}/client`,
             icon: <UserOutlined />,
             label: STRINGS.MENU.CLIENT,
         },
         {
-            key: '/sales',
+            key: `/shops/${shopId}/sales`,
             icon: <DollarOutlined />,
             label: STRINGS.MENU.SALES,
         },
         {
-            key: '/settings',
+            key: `/shops/${shopId}/settings`,
             icon: <SettingOutlined />,
             label: STRINGS.MENU.SETTINGS,
         },
@@ -56,7 +57,7 @@ const MainLayout: React.FC = () => {
     };
 
     // Select the key that matches the current path
-    const selectedKey = menuItems.find(item => location.pathname.startsWith(item.key))?.key || '/schedule';
+    const selectedKey = menuItems.find(item => location.pathname.startsWith(item.key))?.key || `/shops/${shopId}/schedule`;
 
     return (
         <Layout style={{ height: '100vh' }}>
@@ -76,7 +77,7 @@ const MainLayout: React.FC = () => {
                 </div>
                 <Menu
                     theme="dark"
-                    defaultSelectedKeys={['/schedule']}
+                    defaultSelectedKeys={[`/shops/${shopId}/schedule`]}
                     selectedKeys={[selectedKey]}
                     mode="inline"
                     items={menuItems}

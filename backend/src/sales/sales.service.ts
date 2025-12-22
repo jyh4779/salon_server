@@ -9,7 +9,7 @@ export class SalesService {
         private readonly timeService: TimeService // Inject TimeService
     ) { }
 
-    async getDailySales(date: string) {
+    async getDailySales(shopId: number, date: string) {
         try {
             // Use TimeService to handle timezone correctly
             const startOfDay = this.timeService.parse(date).startOf('day').toDate();
@@ -22,7 +22,8 @@ export class SalesService {
                         gte: startOfDay,
                         lte: endOfDay
                     },
-                    status: 'COMPLETED'
+                    status: 'COMPLETED',
+                    shop_id: BigInt(shopId)
                 },
                 include: {
                     USERS: true, // Customer
@@ -74,9 +75,6 @@ export class SalesService {
                     items.forEach((item: any) => {
                         const menuName = item.menu_name || 'Unknown';
                         const menuLimitStats = menuMap.get(menuName) || { name: menuName, totalSales: 0, count: 0 };
-                        // Note: We use item.price for menu stats. 
-                        // If multiple items exist in one reservation, sum of item.price might differ slightly from total payment if discounts applied globally,
-                        // but for menu popularity stats, item.price is the most accurate metric available here.
                         menuLimitStats.totalSales += item.price;
                         menuLimitStats.count += 1;
                         menuMap.set(menuName, menuLimitStats);

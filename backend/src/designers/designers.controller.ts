@@ -1,30 +1,31 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { DesignersService } from './designers.service';
 import { CreateDesignerDto } from './dto/create-designer.dto';
 import { UpdateDesignerDto } from './dto/update-designer.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ShopAuthGuard } from '../common/guards/shop-auth.guard';
 
-@Controller('designers')
+@Controller('shops/:shopId/designers')
+@UseGuards(JwtAuthGuard, ShopAuthGuard)
 export class DesignersController {
     constructor(private readonly designersService: DesignersService) { }
 
     @Post()
     async create(
-        @Body() createDesignerDto: CreateDesignerDto,
-        @Query('shop_id') shopId: string
+        @Param('shopId', ParseIntPipe) shopId: number,
+        @Body() createDesignerDto: CreateDesignerDto
     ) {
-        const id = shopId ? parseInt(shopId, 10) : 1;
-        return this.designersService.create(id, createDesignerDto);
+        return this.designersService.create(shopId, createDesignerDto);
     }
 
     @Get()
-    async findAll(@Query('shop_id') shopId: string) {
-        // shopId defaulting to 1 for now if not provided, or handle validation
-        const id = shopId ? parseInt(shopId, 10) : 1;
-        return this.designersService.findAll(id);
+    async findAll(@Param('shopId', ParseIntPipe) shopId: number) {
+        return this.designersService.findAll(shopId);
     }
 
     @Patch(':id')
     async update(
+        @Param('shopId', ParseIntPipe) shopId: number,
         @Param('id', ParseIntPipe) id: number,
         @Body() updateDesignerDto: UpdateDesignerDto
     ) {

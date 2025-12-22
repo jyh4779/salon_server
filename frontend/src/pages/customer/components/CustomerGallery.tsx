@@ -7,6 +7,7 @@ import { formatDate } from '../../../utils/format';
 const { Text } = Typography;
 
 interface CustomerGalleryProps {
+    shopId: number;
     customerId: number;
     onReservationClick?: (reservationId: string) => void;
 }
@@ -22,7 +23,7 @@ interface GalleryItem {
     categories?: string[];
 }
 
-const CustomerGallery: React.FC<CustomerGalleryProps> = ({ customerId, onReservationClick }) => {
+const CustomerGallery: React.FC<CustomerGalleryProps> = ({ shopId, customerId, onReservationClick }) => {
     const [photos, setPhotos] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [filterCategory, setFilterCategory] = useState<string>('ALL');
@@ -34,19 +35,16 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ customerId, onReserva
     // const [total, setTotal] = useState(0); // Kept for future use if needed
 
     useEffect(() => {
-        if (customerId) {
-            setPhotos([]); // Reset photos on customer change
-            setPage(1);
-            setHasMore(true);
-            // setTotal(0);
-            fetchPhotos(1);
-        }
-    }, [customerId]);
+        setPhotos([]); // Reset photos on customer change
+        setHasMore(true);
+        setPage(1);
+        fetchPhotos(1);
+    }, [customerId, shopId]);
 
     const fetchPhotos = async (pageNum: number) => {
         try {
             setLoading(true);
-            const { data } = await getVisitLogsByCustomer(customerId, pageNum, 9);
+            const { data } = await getVisitLogsByCustomer(shopId, customerId, pageNum, 9); // limit 9
             // const { data, total: totalCount } = await getVisitLogsByCustomer(customerId, pageNum, 9);
             // setTotal(totalCount);
 

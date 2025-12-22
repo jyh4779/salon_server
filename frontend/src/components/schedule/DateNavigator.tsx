@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Space, Typography } from 'antd';
+import { Button, Space, Typography, DatePicker } from 'antd';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
@@ -13,6 +13,7 @@ interface DateNavigatorProps {
     onPrev: () => void;
     onNext: () => void;
     onToday: () => void; // 오늘 날짜로 이동하는 함수
+    onDateSelect?: (date: Date) => void;
     viewType: string;
 }
 
@@ -23,7 +24,7 @@ interface DateNavigatorProps {
  * 캘린더 상단에서 날짜를 이전/다음으로 이동하고 현재 날짜를 표시하는 네비게이션바입니다.
  * STRINGS 상수를 철저히 사용합니다.
  */
-const DateNavigator: React.FC<DateNavigatorProps> = ({ currentDate, onPrev, onNext, onToday, viewType }) => {
+const DateNavigator: React.FC<DateNavigatorProps> = ({ currentDate, onPrev, onNext, onToday, onDateSelect, viewType }) => {
     // 날짜 텍스트 계산
     const getDateText = () => {
         if (viewType === 'timeGridWeek') {
@@ -50,9 +51,37 @@ const DateNavigator: React.FC<DateNavigatorProps> = ({ currentDate, onPrev, onNe
                 onClick={onPrev}
             />
 
-            <Typography.Title level={4} style={{ margin: 0, minWidth: 200, textAlign: 'center', cursor: 'pointer' }}>
-                {getDateText()}
-            </Typography.Title>
+            <div style={{ position: 'relative' }}>
+                <Typography.Title
+                    level={4}
+                    style={{ margin: 0, minWidth: 200, textAlign: 'center', cursor: 'pointer' }}
+                    onClick={() => {
+                        // Trigger DatePicker (How? We can render it absolute or use a ref?)
+                        // Easier: Render a DatePicker with style opacity 0 on top?
+                        // Or just render DatePicker and customize input?
+                    }}
+                >
+                    {getDateText()}
+                </Typography.Title>
+                {onDateSelect && (
+                    <DatePicker
+                        value={dayjs(currentDate)}
+                        onChange={(date) => {
+                            if (date) onDateSelect(date.toDate());
+                        }}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            opacity: 0,
+                            cursor: 'pointer'
+                        }}
+                        allowClear={false}
+                    />
+                )}
+            </div>
 
             <Button
                 type="text"
