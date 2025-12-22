@@ -9,10 +9,14 @@ export interface CreateVisitLogDTO {
     photo_urls?: string[];
 }
 
-export interface VisitLogDTO extends CreateVisitLogDTO {
+export interface VisitLogDTO extends Omit<CreateVisitLogDTO, 'customer_id' | 'reservation_id' | 'designer_id'> {
     log_id: string;
+    customer_id: string;
+    reservation_id: string;
+    designer_id: string;
     visited_at: string;
     menu_names?: string[];
+    categories?: string[];
 }
 
 export const createVisitLog = async (data: CreateVisitLogDTO): Promise<VisitLogDTO> => {
@@ -25,7 +29,9 @@ export const getVisitLogByReservation = async (reservationId: number): Promise<V
     return response.data || null;
 };
 
-export const getVisitLogsByCustomer = async (customerId: number): Promise<VisitLogDTO[]> => {
-    const response = await axios.get(`${API_BASE_URL}/visit-logs/customer/${customerId}`);
-    return response.data || [];
+export const getVisitLogsByCustomer = async (customerId: number, page: number = 1, limit: number = 9): Promise<{ data: VisitLogDTO[], total: number }> => {
+    const response = await axios.get(`${API_BASE_URL}/visit-logs/customer/${customerId}`, {
+        params: { page, limit }
+    });
+    return response.data;
 };

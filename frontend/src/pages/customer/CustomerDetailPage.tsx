@@ -199,7 +199,13 @@ const CustomerDetailPage: React.FC = () => {
 
                     {/* Photo Gallery */}
                     <Card title="시술 갤러리" size="small">
-                        <CustomerGallery customerId={Number(id)} />
+                        <CustomerGallery
+                            customerId={Number(id)}
+                            onReservationClick={(reservationId) => {
+                                setSelectedReservationId(reservationId);
+                                setIsModalOpen(true);
+                            }}
+                        />
                     </Card>
                 </Flex>
             </div>

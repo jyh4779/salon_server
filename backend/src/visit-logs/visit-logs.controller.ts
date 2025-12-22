@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { VisitLogsService } from './visit-logs.service';
 import { CreateVisitLogDto } from './dto/create-visit-log.dto';
 
@@ -17,7 +17,12 @@ export class VisitLogsController {
     }
 
     @Get('customer/:id')
-    findByCustomer(@Param('id') id: string) {
-        return this.visitLogsService.findByCustomer(+id);
+    @Get('customer/:id')
+    findByCustomer(
+        @Param('id') id: string,
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(9), ParseIntPipe) limit: number,
+    ) {
+        return this.visitLogsService.findByCustomer(+id, page, limit);
     }
 }

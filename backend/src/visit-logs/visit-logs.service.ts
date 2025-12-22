@@ -35,21 +35,37 @@ export class VisitLogsService {
         return this.mapToDto(log);
     }
 
-    async findByCustomer(customerId: number) {
-        const logs = await this.prisma.vISIT_LOGS.findMany({
-            where: { customer_id: BigInt(customerId) },
-            orderBy: { visited_at: 'desc' },
-            include: {
-                DESIGNERS: {
-                    include: { USERS: true }
-                }, // To show designer name if needed
-                RESERVATIONS: {
-                    include: { RESERVATION_ITEMS: true }
-                }
-            }
-        });
+    async findByCustomer(customerId: number, page: number = 1, limit: number = 9) {
+        const skip = (page - 1) * limit;
 
-        return logs.map(log => this.mapToDto(log));
+        const [logs, total] = await Promise.all([
+            this.prisma.vISIT_LOGS.findMany({
+                where: { customer_id: BigInt(customerId) },
+                orderBy: { visited_at: 'desc' },
+                skip,
+                take: limit,
+                include: {
+                    DESIGNERS: {
+                        include: { USERS: true }
+                    }, // To show designer name if needed
+                    RESERVATIONS: {
+                        include: {
+                            RESERVATION_ITEMS: {
+                                include: { MENUS: true }
+                            }
+                        }
+                    }
+                }
+            }),
+            this.prisma.vISIT_LOGS.count({
+                where: { customer_id: BigInt(customerId) },
+            })
+        ]);
+
+        return {
+            data: logs.map(log => this.mapToDto(log)),
+            total
+        };
     }
 
     private mapToDto(log: any) {
@@ -61,6 +77,7 @@ export class VisitLogsService {
             designer_id: log.designer_id.toString(),
             photo_urls: log.photo_urls ? JSON.parse(log.photo_urls) : [],
             menu_names: log.RESERVATIONS?.RESERVATION_ITEMS?.map((item: any) => item.menu_name) || [],
+            categories: log.RESERVATIONS?.RESERVATION_ITEMS?.flatMap((item: any) => item.MENUS?.category).filter(Boolean) || [],
         };
     }
 }
