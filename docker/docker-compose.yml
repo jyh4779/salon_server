@@ -24,7 +24,10 @@ services:
     environment:
       - DATABASE_URL=mysql://root:password@mariadb:3306/salon_db
       - TZ=Asia/Seoul
-      # Add other env vars here or use env_file
+      - JWT_SECRET=salon_manager_secret_key
+      - JWT_EXPIRATION_TIME=3600s
+      - JWT_REFRESH_SECRET=salon_manager_refresh_secret_key
+      - JWT_REFRESH_EXPIRATION_TIME=604800s
     depends_on:
       - mariadb
     volumes:
