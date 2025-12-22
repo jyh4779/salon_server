@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb-server
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      - MARIADB_ROOT_PASSWORD=password
+      - TZ=Asia/Seoul
+    volumes:
+      - ./mariadb_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../docker/backend/Dockerfile
+    container_name: salon-backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=mysql://root:password@mariadb:3306/salon_db
+      - TZ=Asia/Seoul
+      # Add other env vars here or use env_file
+    depends_on:
+      - mariadb
+    volumes:
+      - ./uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/frontend/Dockerfile
+    container_name: salon-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
