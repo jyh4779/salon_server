@@ -5,7 +5,7 @@ import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
 import { getCustomer, CustomerDetail, createMemo } from '../../api/customers';
 import { formatPhoneNumber, formatDateTime, formatDate } from '../../utils/format';
 import ReservationDetailModal from '../../components/schedule/ReservationDetailModal';
-import CustomerGallery from '@/pages/customer/components/CustomerGallery';
+import CustomerGallery from './components/CustomerGallery';
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
