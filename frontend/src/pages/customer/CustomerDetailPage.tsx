@@ -117,7 +117,7 @@ const CustomerDetailPage: React.FC = () => {
             title: '결제금액',
             dataIndex: 'price',
             key: 'price',
-            render: (price: number) => `${price.toLocaleString()}원`,
+            render: (price: number) => `${price.toLocaleString()} 원`,
         },
     ];
 
