@@ -9,6 +9,7 @@ COPY prisma ./prisma/
 
 # Install dependencies
 RUN npm install --legacy-peer-deps
+RUN npm install -g @nestjs/cli
 
 # Copy source code
 COPY . .
@@ -18,6 +19,7 @@ RUN npx prisma generate
 
 # Build the application
 RUN npm run build
+RUN echo "Build complete. Listing dist:" && ls -lah dist
 
 # Production Stage
 FROM node:18-alpine
@@ -34,4 +36,4 @@ COPY --from=builder /app/prisma ./prisma
 EXPOSE 3000
 
 # Start the application
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main"]

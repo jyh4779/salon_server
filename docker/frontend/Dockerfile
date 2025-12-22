@@ -8,6 +8,8 @@ COPY frontend/package*.json ./
 
 # Install dependencies
 RUN npm install --legacy-peer-deps
+RUN npm install -g typescript vite
+RUN npm install --save-dev @types/node
 
 # Copy source code
 COPY frontend/ .
