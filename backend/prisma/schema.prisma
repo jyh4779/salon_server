@@ -57,10 +57,17 @@ model MENUS {
   duration          Int                 @default(60)
   description       String?             @db.Text
   is_deleted        Boolean?            @default(false)
+  type              MENUS_type          @default(MENU)
+  sort_order        Int                 @default(0)
   SHOPS             SHOPS               @relation(fields: [shop_id], references: [shop_id], onDelete: Cascade, onUpdate: Restrict)
   RESERVATION_ITEMS RESERVATION_ITEMS[]
 
   @@index([shop_id], map: "MENUS_shop_id_fkey")
+}
+
+enum MENUS_type {
+  MENU
+  CATEGORY
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments

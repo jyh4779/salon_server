@@ -1,12 +1,35 @@
-import { PartialType } from '@nestjs/mapped-types'; // NestJS mapped types usually need a package, but for now I'll just manual partial or export class
-// Installing @nestjs/mapped-types might be needed. Checking if user has it.
-// If not, just `export class UpdateMenuDto { ... }` with optional fields.
+import { IsString, IsNumber, IsOptional, IsEnum, IsBoolean } from 'class-validator';
 
 export class UpdateMenuDto {
+    @IsString()
+    @IsOptional()
     category?: string;
+
+    @IsString()
+    @IsOptional()
     name?: string;
+
+    @IsNumber()
+    @IsOptional()
     price?: number;
+
+    @IsNumber()
+    @IsOptional()
     duration?: number;
+
+    @IsString()
+    @IsOptional()
     description?: string;
+
+    @IsBoolean()
+    @IsOptional()
     is_deleted?: boolean;
+
+    @IsEnum(['MENU', 'CATEGORY'])
+    @IsOptional()
+    type?: 'MENU' | 'CATEGORY';
+
+    @IsNumber()
+    @IsOptional()
+    sort_order?: number;
 }

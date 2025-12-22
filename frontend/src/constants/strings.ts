@@ -66,6 +66,11 @@ export const STRINGS = {
     },
     SETTINGS: {
         TITLE: '설정',
+    },
+    UPLOAD: {
+        ERROR_GENERIC: '업로드에 실패했습니다.',
+        ERROR_EXT: 'JPG/PNG/WEBP 파일만 업로드 가능합니다!',
+        ERROR_SIZE: '이미지 크기는 5MB보다 작아야 합니다!',
     }
 };
 

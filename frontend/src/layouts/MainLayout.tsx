@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Layout, Menu, theme } from 'antd';
+import { Layout, Menu, theme, Button, Space, Typography, Avatar, Flex } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
     CalendarOutlined,
     UserOutlined,
     DollarOutlined,
     SettingOutlined,
+    LogoutOutlined,
 } from '@ant-design/icons';
 import { STRINGS } from '../constants/strings';
+import { useAuth } from '../context/AuthContext';
 
 const { Header, Sider, Content } = Layout;
 
@@ -19,6 +21,7 @@ const MainLayout: React.FC = () => {
 
     const navigate = useNavigate();
     const location = useLocation();
+    const { user, logout } = useAuth();
 
     const menuItems = [
         {
@@ -45,6 +48,11 @@ const MainLayout: React.FC = () => {
 
     const handleMenuClick = (e: { key: string }) => {
         navigate(e.key);
+    };
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
     };
 
     // Select the key that matches the current path
@@ -76,7 +84,23 @@ const MainLayout: React.FC = () => {
                 />
             </Sider>
             <Layout>
-                <Header style={{ padding: 0, background: colorBgContainer }} />
+                <Header style={{ padding: '0 24px', background: colorBgContainer }}>
+                    <Flex justify="end" align="center" style={{ height: '100%' }}>
+                        {user && (
+                            <Space size="middle">
+                                <Space>
+                                    <Avatar icon={<UserOutlined />} src={user.profile_img} />
+                                    <Typography.Text strong>
+                                        {user.name} <Typography.Text type="secondary">({user.role})</Typography.Text>
+                                    </Typography.Text>
+                                </Space>
+                                <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout} danger>
+                                    로그아웃
+                                </Button>
+                            </Space>
+                        )}
+                    </Flex>
+                </Header>
                 <Content style={{ margin: '16px', overflowY: 'auto' }}>
                     <div style={{ padding: 24, minHeight: 360, background: colorBgContainer }}>
                         <Outlet />

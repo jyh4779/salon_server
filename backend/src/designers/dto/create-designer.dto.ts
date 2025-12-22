@@ -12,4 +12,8 @@ export class CreateDesignerDto {
     @IsOptional()
     @IsString()
     intro_text?: string;
+
+    @IsOptional()
+    @IsString()
+    profile_img?: string;
 }

@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Form, Descriptions, message, Popconfirm, Flex, Tag, DatePicker, TimePicker, Select, Input, Switch, InputNumber } from 'antd';
+import { Modal, Button, Form, Descriptions, message, Popconfirm, Flex, Tag, DatePicker, TimePicker, Select, Input, Switch, InputNumber, Tabs } from 'antd';
 import dayjs from 'dayjs';
 import { ReservationDTO, CreateReservationDTO } from '../../types/reservation';
 import { getReservation, updateReservation, deleteReservation, completeReservation } from '../../api/reservations';
 import { getDesigners } from '../../api/designer';
 import { getMenus } from '../../api/menu';
 import { getShop } from '../../api/shops';
+import { createVisitLog, getVisitLogByReservation } from '../../api/visitLogs';
+import ImageUpload from '../common/ImageUpload';
 import { RESERVATION_STATUS_COLORS, STRINGS } from '../../constants/strings';
 import PaymentConfirmationModal from './PaymentConfirmationModal';
+import { formatPhoneNumber } from '../../utils/format';
 
 interface ReservationDetailModalProps {
     isOpen: boolean;
@@ -25,6 +28,10 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     const [mode, setMode] = useState<'view' | 'edit'>('view');
     const [reservation, setReservation] = useState<ReservationDTO | null>(null);
     const [form] = Form.useForm();
+
+    // Visit Log Form States
+    const [logMemo, setLogMemo] = useState('');
+    const [logPhotos, setLogPhotos] = useState<string[]>([]);
 
     // Payment Modal State
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -46,8 +53,26 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                     message.error('예약 정보를 불러오는데 실패했습니다.');
                     onClose();
                 });
+
+            // Reset Log states
+            setLogMemo('');
+            setLogPhotos([]);
         }
     }, [isOpen, reservationId]);
+
+    // Fetch Visit Log
+    useEffect(() => {
+        if (isOpen && reservationId && reservation?.status === 'COMPLETED') {
+            getVisitLogByReservation(parseInt(reservationId, 10))
+                .then(data => {
+                    if (data) {
+                        setLogMemo(data.admin_memo || '');
+                        setLogPhotos(data.photo_urls || []);
+                    }
+                })
+                .catch(console.error);
+        }
+    }, [isOpen, reservationId, reservation?.status]);
 
     // Fetch helper data for Edit
     useEffect(() => {
@@ -143,13 +168,60 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                 // Customer cannot be changed easily in this version (logic complexity)
             };
 
-            await updateReservation(reservationId, updateData);
-            message.success(STRINGS.COMMON.SAVE + '되었습니다.');
-            onUpdate();
-            onClose();
+            const submitUpdate = async (force: boolean) => {
+                try {
+                    const finalData = { ...updateData, force };
+                    const response = await updateReservation(reservationId, finalData);
+
+                    if (response && response.status === 'CONFLICT') {
+                        Modal.confirm({
+                            title: '예약 확인',
+                            content: response.message,
+                            okText: '저장 (무시하고 진행)',
+                            cancelText: '취소',
+                            onOk: () => submitUpdate(true),
+                        });
+                        return;
+                    }
+
+                    message.success(STRINGS.COMMON.SAVE + '되었습니다.');
+                    onUpdate();
+                    onClose();
+                } catch (e: any) {
+                    console.error('Update Failed:', e);
+                    const errorMsg = e.response?.data?.message;
+                    if (Array.isArray(errorMsg)) {
+                        message.error(errorMsg.join(', '));
+                    } else if (errorMsg) {
+                        message.error(errorMsg);
+                    } else {
+                        message.error('수정에 실패했습니다.');
+                    }
+                }
+            };
+
+            await submitUpdate(false);
+
+        } catch (e: any) {
+            console.error(e);
+            message.warning('필수 항목을 확인해주세요.');
+        }
+    };
+
+    const handleSaveVisitLog = async () => {
+        if (!reservationId || !reservation) return;
+        try {
+            await createVisitLog({
+                reservation_id: parseInt(String(reservationId), 10),
+                customer_id: reservation.customer_id,
+                designer_id: reservation.designer_id,
+                admin_memo: logMemo,
+                photo_urls: logPhotos
+            });
+            message.success('시술 기록이 저장되었습니다.');
         } catch (e) {
             console.error(e);
-            message.error('수정에 실패했습니다.');
+            message.error('시술 기록 저장 실패');
         }
     };
 
@@ -171,19 +243,15 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
 
     if (!reservation) return null;
 
-    return (
-        <Modal
-            open={isOpen}
-            onCancel={onClose}
-            title={mode === 'view' ? "예약 상세" : "예약 수정"}
-            footer={null}
-            destroyOnHidden
-        >
-            {mode === 'view' ? (
+    const items = [
+        {
+            key: '1',
+            label: '예약 정보',
+            children: (
                 <Flex vertical gap="middle">
                     <Descriptions column={1} bordered>
                         <Descriptions.Item label="고객명">
-                            {reservation.USERS.name} ({reservation.USERS.phone})
+                            {reservation.USERS.name} ({formatPhoneNumber(String(reservation.USERS.phone || ''))})
                         </Descriptions.Item>
                         <Descriptions.Item label="담당 디자이너">
                             {reservation.DESIGNERS.USERS.name}
@@ -230,6 +298,49 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                         </Flex>
                     </Flex>
                 </Flex>
+            )
+        },
+        {
+            key: '2',
+            label: '시술 기록 (Visit Log)',
+            children: (
+                <Flex vertical gap="middle">
+                    <div>
+                        <div style={{ marginBottom: 8 }}>관리자 메모 (시술 노트)</div>
+                        <Input.TextArea
+                            rows={4}
+                            value={logMemo}
+                            onChange={(e) => setLogMemo(e.target.value)}
+                            placeholder="시술 상세 내용, 약제 정보 등을 기록하세요."
+                        />
+                    </div>
+                    <div>
+                        <div style={{ marginBottom: 8 }}>포토 로그</div>
+                        <ImageUpload
+                            category="visit-logs"
+                            value={logPhotos}
+                            maxCount={5}
+                            onChange={(urls) => setLogPhotos(Array.isArray(urls) ? urls : [urls])}
+                        />
+                    </div>
+                    <Button type="primary" onClick={handleSaveVisitLog} disabled={mode === 'edit'}>
+                        기록 저장
+                    </Button>
+                </Flex>
+            )
+        }
+    ];
+
+    return (
+        <Modal
+            open={isOpen}
+            onCancel={onClose}
+            title={mode === 'view' ? "예약 상세" : "예약 수정"}
+            footer={null}
+            destroyOnHidden
+        >
+            {mode === 'view' ? (
+                <Tabs defaultActiveKey="1" items={items} />
             ) : (
                 <Form form={form} layout="vertical" onFinish={handleUpdate}>
                     <Form.Item label="예약 날짜" name="date" rules={[{ required: true }]}>
@@ -250,7 +361,9 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                     <Flex gap="small">
                         <Form.Item label="시술 메뉴" name="treatmentId" rules={[{ required: true }]} style={{ flex: 1 }}>
                             <Select
-                                options={menus.map(m => ({ label: `${m.name}`, value: m.menu_id }))}
+                                options={menus
+                                    .filter(m => m.type !== 'CATEGORY')
+                                    .map(m => ({ label: `${m.name}`, value: m.menu_id }))}
                                 onChange={(value) => {
                                     // 메뉴 변경 시 기본 가격 세팅
                                     const selectedMenu = menus.find(m => m.menu_id === value);

@@ -1,0 +1,229 @@
+{
+    "tech_stack": [
+        "TypeScript",
+        "NestJS",
+        "Prisma",
+        "MySQL",
+        "Passport",
+        "JWT"
+    ],
+    "features": [
+        {
+            "name": "Auth API",
+            "description": "Authentication management including login, logout, and token refresh.",
+            "files": [
+                "backend/src/auth/auth.controller.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/auth/login": {
+                        "post": {
+                            "summary": "User Login",
+                            "requestBody": {
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "email": {
+                                                    "type": "string"
+                                                },
+                                                "password": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "/auth/logout": {
+                        "post": {
+                            "summary": "User Logout"
+                        }
+                    },
+                    "/auth/refresh": {
+                        "post": {
+                            "summary": "Refresh Access Token"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Menus API",
+            "description": "Menu management including retrieving, creating, updating, and deleting menus.",
+            "files": [
+                "backend/src/menus/menus.controller.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/menus": {
+                        "get": {
+                            "summary": "Get all menus for a shop"
+                        },
+                        "post": {
+                            "summary": "Create a new menu"
+                        }
+                    },
+                    "/menus/{id}": {
+                        "patch": {
+                            "summary": "Update a menu"
+                        },
+                        "delete": {
+                            "summary": "Delete a menu"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Reservations API",
+            "description": "Reservation management including Listing, Creating, Updating, Completing, and Deleting.",
+            "files": [
+                "backend/src/reservations/reservations.controller.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/reservations": {
+                        "get": {
+                            "summary": "Get all reservations with filters"
+                        },
+                        "post": {
+                            "summary": "Create a reservation"
+                        }
+                    },
+                    "/reservations/{id}": {
+                        "get": {
+                            "summary": "Get one reservation"
+                        },
+                        "patch": {
+                            "summary": "Update reservation status or details"
+                        },
+                        "delete": {
+                            "summary": "Delete reservation"
+                        }
+                    },
+                    "/reservations/{id}/complete": {
+                        "post": {
+                            "summary": "Complete a reservation with payment"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Designers API",
+            "description": "Designer management APIs.",
+            "files": [
+                "backend/src/designers/designers.controller.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/designers": {
+                        "get": {
+                            "summary": "Get all designers"
+                        },
+                        "post": {
+                            "summary": "Create a designer"
+                        }
+                    },
+                    "/designers/{id}": {
+                        "patch": {
+                            "summary": "Update designer info"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Shops API",
+            "description": "Shop management APIs.",
+            "files": [
+                "backend/src/shops/shops.controller.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/shops/{id}": {
+                        "get": {
+                            "summary": "Get shop info"
+                        },
+                        "patch": {
+                            "summary": "Update shop info"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Users API",
+            "description": "User management APIs.",
+            "files": [
+                "backend/src/users/users.controller.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/users": {
+                        "get": {
+                            "summary": "Search users"
+                        },
+                        "post": {
+                            "summary": "Create user"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Customers API",
+            "description": "Customer specific APIs.",
+            "files": [
+                "backend/src/customers/customers.controller.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/customers": {
+                        "get": {
+                            "summary": "Search customers"
+                        }
+                    },
+                    "/customers/{id}": {
+                        "get": {
+                            "summary": "Get customer details"
+                        }
+                    },
+                    "/customers/{id}/memos": {
+                        "post": {
+                            "summary": "Create memo for customer"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Sales API",
+            "description": "Sales reporting APIs.",
+            "files": [
+                "backend/src/sales/sales.controller.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/sales/daily": {
+                        "get": {
+                            "summary": "Get daily sales report"
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

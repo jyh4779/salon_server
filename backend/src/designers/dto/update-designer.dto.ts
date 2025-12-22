@@ -36,4 +36,8 @@ export class UpdateDesignerDto {
     @IsOptional()
     @IsString()
     phone?: string;
+
+    @IsOptional()
+    @IsString()
+    profile_img?: string;
 }

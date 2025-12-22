@@ -4,6 +4,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
+import { formatPhoneNumber } from '../../utils/format';
 import { getCustomers, CustomerStats } from '../../api/customers';
 import NewCustomerModal from '../../components/common/NewCustomerModal';
 
@@ -57,6 +58,7 @@ const CustomerPage: React.FC = () => {
             title: '연락처',
             dataIndex: 'phone',
             key: 'phone',
+            render: (phone: string) => formatPhoneNumber(phone),
         },
         {
             title: '성별',

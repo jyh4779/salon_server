@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TimeService } from '../common/time/time.service';
 
 @Injectable()
 export class CustomersService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly timeService: TimeService // Inject TimeService
+    ) { }
 
     async findAll(search?: string) {
         const whereCondition = {
@@ -57,7 +61,7 @@ export class CustomersService {
 
             // Last visit
             const lastVisit = completedReservations.length > 0
-                ? completedReservations.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())[0].start_time
+                ? completedReservations.sort((a, b) => this.timeService.parse(b.start_time).valueOf() - this.timeService.parse(a.start_time).valueOf())[0].start_time
                 : null;
 
             // Total Pay
@@ -183,7 +187,7 @@ export class CustomersService {
         }));
 
         const joinedMemos = [...reservationMemos, ...generalMemos].sort((a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            this.timeService.parse(b.created_at).valueOf() - this.timeService.parse(a.created_at).valueOf()
         );
 
         return {

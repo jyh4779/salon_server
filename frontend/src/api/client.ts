@@ -8,6 +8,30 @@ export const api = axios.create({
 
 let accessToken: string | null = null;
 
+// Callback to notify AuthContext of logout
+let onUnauthorized: () => void = () => { };
+
+export const setOnUnauthorized = (callback: () => void) => {
+    onUnauthorized = callback;
+};
+
+// Deduplication Promise
+let refreshPromise: Promise<any> | null = null;
+
+export const refreshSession = async () => {
+    if (refreshPromise) {
+        return refreshPromise;
+    }
+
+    refreshPromise = api.post('/auth/refresh')
+        .finally(() => {
+            // Clear promise after short delay to allow concurrent requests to share it
+            setTimeout(() => { refreshPromise = null; }, 1000);
+        });
+
+    return refreshPromise;
+};
+
 export const setAccessToken = (token: string | null) => {
     accessToken = token;
 };
@@ -17,6 +41,10 @@ api.interceptors.request.use(
     (config) => {
         if (accessToken) {
             config.headers.Authorization = `Bearer ${accessToken}`;
+        }
+        // DEBUG: Log Request
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, config.data);
         }
         return config;
     },
@@ -34,14 +62,8 @@ api.interceptors.response.use(
             originalRequest._retry = true;
 
             try {
-                // Call Refresh Endpoint
-                // We use a separate instance implies we don't want to loop interceptors? 
-                // But /refresh endpoint should not require Access Token generally (verified by cookie)
-                // However, the interceptor above injects invalid token if present.
-                // It's safer to use the same api instance but ensuring /refresh doesn't 401 itself in a way that triggers this loop? 
-                // If /refresh 401s, it rejects.
-
-                const response = await api.post('/auth/refresh');
+                // Call Refresh Endpoint with Deduplication
+                const response = await refreshSession();
 
                 if (response.data && response.data.accessToken) {
                     setAccessToken(response.data.accessToken);
@@ -52,9 +74,9 @@ api.interceptors.response.use(
                 }
             } catch (refreshError) {
                 // Refresh failed (Session expired)
+                // Refresh failed (Session expired)
                 setAccessToken(null);
-                // Optionally redirect to login or let the error propagate
-                // The AuthContext will likely catch this when initial loader fails or subsequent calls fail
+                onUnauthorized();
                 return Promise.reject(refreshError);
             }
         }

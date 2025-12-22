@@ -1,15 +1,19 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as dayjs from 'dayjs';
+import { TimeService } from '../common/time/time.service';
 
 @Injectable()
 export class SalesService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly timeService: TimeService // Inject TimeService
+    ) { }
 
     async getDailySales(date: string) {
         try {
-            const startOfDay = dayjs(date).startOf('day').toDate();
-            const endOfDay = dayjs(date).endOf('day').toDate();
+            // Use TimeService to handle timezone correctly
+            const startOfDay = this.timeService.parse(date).startOf('day').toDate();
+            const endOfDay = this.timeService.parse(date).endOf('day').toDate();
 
             // Fetch Completed Reservations for the day
             const reservations = await this.prisma.rESERVATIONS.findMany({

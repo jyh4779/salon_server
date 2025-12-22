@@ -30,7 +30,7 @@ export const updateDesigner = async (id: number, data: Partial<DesignerDTO>): Pr
     return response.data;
 };
 
-export const createDesigner = async (shopId: number, data: { name: string; phone: string; intro_text?: string }): Promise<DesignerDTO> => {
+export const createDesigner = async (shopId: number, data: { name: string; phone: string; intro_text?: string; profile_img?: string }): Promise<DesignerDTO> => {
     const response = await api.post(`/designers`, data, {
         params: { shop_id: shopId }
     });

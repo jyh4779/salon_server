@@ -2,28 +2,29 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Popconfirm } from 'antd';
 import { MenuDTO, getMenus, createMenu, updateMenu, deleteMenu } from '../../../api/menu';
 
-const categoryOptions = [
-    { label: '컷', value: 'Cut' },
-    { label: '펌', value: 'Perm' },
-    { label: '컬러', value: 'Color' },
-    { label: '클리닉', value: 'Clinic' },
-    { label: '기타', value: 'Etc' },
-];
+
 
 const MenuSettings: React.FC = () => {
-    const [menus, setMenus] = useState<MenuDTO[]>([]);
+    const [categories, setCategories] = useState<MenuDTO[]>([]);
+    const [menuItems, setMenuItems] = useState<MenuDTO[]>([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingMenu, setEditingMenu] = useState<MenuDTO | null>(null); // null means creating
+    const [editingMenu, setEditingMenu] = useState<MenuDTO | null>(null);
     const [form] = Form.useForm();
 
     const fetchMenus = async () => {
         setLoading(true);
         try {
             const data = await getMenus(1);
-            setMenus(data);
+            // Separate Categories and Items
+            const cats = data.filter(m => m.type === 'CATEGORY').sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+            // Only show Items (type is not CATEGORY)
+            const items = data.filter(m => m.type !== 'CATEGORY');
+
+            setCategories(cats);
+            setMenuItems(items);
         } catch (error) {
-            message.error('메뉴 목록을 불러오는데 실패했습니다.');
+            message.error('데이터를 불러오는데 실패했습니다.');
         } finally {
             setLoading(false);
         }
@@ -33,16 +34,26 @@ const MenuSettings: React.FC = () => {
         fetchMenus();
     }, []);
 
+    useEffect(() => {
+        if (isModalOpen) {
+            form.resetFields();
+            if (editingMenu) {
+                form.setFieldsValue(editingMenu);
+            } else {
+                if (categories.length > 0) {
+                    form.setFieldValue('category', categories[0].name);
+                }
+            }
+        }
+    }, [isModalOpen, editingMenu, form, categories]);
+
     const handleCreate = () => {
         setEditingMenu(null);
-        form.resetFields();
-        form.setFieldValue('category', 'Cut'); // default
         setIsModalOpen(true);
     };
 
     const handleEdit = (menu: MenuDTO) => {
         setEditingMenu(menu);
-        form.setFieldsValue(menu);
         setIsModalOpen(true);
     };
 
@@ -59,12 +70,13 @@ const MenuSettings: React.FC = () => {
     const handleModalOk = async () => {
         try {
             const values = await form.validateFields();
+            const payload = { ...values, type: 'MENU' }; // Ensure type is MENU
 
             if (editingMenu) {
-                await updateMenu(parseInt(editingMenu.menu_id, 10), values);
+                await updateMenu(parseInt(editingMenu.menu_id, 10), payload);
                 message.success('수정되었습니다.');
             } else {
-                await createMenu(1, values);
+                await createMenu(1, payload);
                 message.success('생성되었습니다.');
             }
 
@@ -80,7 +92,7 @@ const MenuSettings: React.FC = () => {
             title: '카테고리',
             dataIndex: 'category',
             key: 'category',
-            width: 100,
+            width: 120,
         },
         {
             title: '메뉴명',
@@ -118,7 +130,7 @@ const MenuSettings: React.FC = () => {
                 <Button type="primary" onClick={handleCreate}>메뉴 추가</Button>
             </div>
             <Table
-                dataSource={menus}
+                dataSource={menuItems}
                 columns={columns}
                 rowKey="menu_id"
                 loading={loading}
@@ -134,7 +146,19 @@ const MenuSettings: React.FC = () => {
             >
                 <Form form={form} layout="vertical">
                     <Form.Item label="카테고리" name="category" rules={[{ required: true }]}>
-                        <Select options={categoryOptions} />
+                        {categories.length > 0 ? (
+                            <Select>
+                                {categories.map(cat => (
+                                    <Select.Option key={cat.menu_id} value={cat.name}>
+                                        {cat.name}
+                                    </Select.Option>
+                                ))}
+                            </Select>
+                        ) : (
+                            <div style={{ color: 'red' }}>
+                                등록된 카테고리가 없습니다. '메뉴 카테고리' 탭에서 먼저 추가해주세요.
+                            </div>
+                        )}
                     </Form.Item>
                     <Form.Item label="메뉴명" name="name" rules={[{ required: true }]}>
                         <Input />

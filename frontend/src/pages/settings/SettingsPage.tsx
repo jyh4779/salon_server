@@ -3,6 +3,7 @@ import { Tabs, Typography, Layout, theme } from 'antd';
 import ShopSettings from './components/ShopSettings';
 import DesignerSettings from './components/DesignerSettings';
 import MenuSettings from './components/MenuSettings';
+import CategorySettings from './components/CategorySettings';
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -25,6 +26,11 @@ const SettingsPage: React.FC = () => {
         },
         {
             key: '3',
+            label: '메뉴 카테고리',
+            children: <CategorySettings />,
+        },
+        {
+            key: '4',
             label: '시술 메뉴',
             children: <MenuSettings />,
         },

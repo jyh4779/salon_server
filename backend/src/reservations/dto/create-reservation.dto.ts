@@ -42,4 +42,8 @@ export class CreateReservationDto {
     @IsOptional()
     @IsInt()
     price?: number; // 메뉴 가격 (직접 입력 가능)
+
+    @IsOptional()
+    @IsBoolean()
+    force?: boolean; // 경고 무시하고 강제 예약 여부
 }

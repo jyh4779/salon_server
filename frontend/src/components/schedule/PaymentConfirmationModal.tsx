@@ -62,7 +62,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
                         style={{ width: '100%' }}
                         formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                         parser={(displayValue) => displayValue?.replace(/\$\s?|(,*)/g, '') as unknown as number}
-                        addonAfter="원"
+                        suffix="원"
                     />
                 </Form.Item>
 

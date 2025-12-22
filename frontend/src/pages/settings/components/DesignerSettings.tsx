@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, TimePicker, Checkbox, Switch, message, Space } from 'antd';
+import { Table, Button, Modal, Form, Input, TimePicker, Checkbox, Switch, message, Space, Avatar } from 'antd';
 import { DesignerDTO, getDesigners, updateDesigner, createDesigner } from '../../../api/designer';
+import { formatPhoneNumber } from '../../../utils/format';
 import dayjs from 'dayjs';
+import ImageUpload from '../../../components/common/ImageUpload';
+import { API_BASE_URL } from '../../../constants/config';
 
 const daysOptions = [
     { label: '월', value: 'Mon' },
@@ -53,13 +56,14 @@ const DesignerSettings: React.FC = () => {
                 form.setFieldsValue({
                     ...editingDesigner,
                     name: editingDesigner.USERS.name,
-                    phone: editingDesigner.USERS.phone,
+                    phone: formatPhoneNumber(editingDesigner.USERS.phone),
                     work_start: editingDesigner.work_start ? dayjs(editingDesigner.work_start, 'HH:mm') : null,
                     work_end: editingDesigner.work_end ? dayjs(editingDesigner.work_end, 'HH:mm') : null,
                     lunch_start: editingDesigner.lunch_start ? dayjs(editingDesigner.lunch_start, 'HH:mm') : null,
                     lunch_end: editingDesigner.lunch_end ? dayjs(editingDesigner.lunch_end, 'HH:mm') : null,
                     day_off: editingDesigner.day_off ? editingDesigner.day_off.split(',') : [],
                     is_active: editingDesigner.is_active ?? true,
+                    profile_img: editingDesigner.profile_img,
                 });
             } else {
                 form.resetFields();
@@ -76,13 +80,13 @@ const DesignerSettings: React.FC = () => {
                 // Update Logic
                 const payload: Partial<DesignerDTO> = {
                     intro_text: values.intro_text,
+                    profile_img: values.profile_img,
                     work_start: values.work_start ? values.work_start.format('HH:mm') : undefined,
                     work_end: values.work_end ? values.work_end.format('HH:mm') : undefined,
                     lunch_start: values.lunch_start ? values.lunch_start.format('HH:mm') : undefined,
                     lunch_end: values.lunch_end ? values.lunch_end.format('HH:mm') : undefined,
                     day_off: values.day_off ? values.day_off.join(',') : '',
                     is_active: values.is_active,
-                    // Use type assertion or extended interface if needed, but for now passing as any to bypass Partial<DesignerDTO> strictness if name is not in DTO interface
                     name: values.name,
                     phone: values.phone,
                 } as any;
@@ -94,6 +98,7 @@ const DesignerSettings: React.FC = () => {
                     name: values.name,
                     phone: values.phone,
                     intro_text: values.intro_text,
+                    profile_img: values.profile_img,
                 };
                 await createDesigner(1, payload); // Default shop 1
                 message.success('추가되었습니다.');
@@ -109,6 +114,12 @@ const DesignerSettings: React.FC = () => {
 
     const columns = [
         {
+            title: '프로필',
+            dataIndex: 'profile_img',
+            key: 'profile_img',
+            render: (url: string) => url ? <Avatar src={`${API_BASE_URL}${url}`} /> : <Avatar>{'D'}</Avatar>,
+        },
+        {
             title: '이름',
             dataIndex: ['USERS', 'name'],
             key: 'name',
@@ -117,6 +128,7 @@ const DesignerSettings: React.FC = () => {
             title: '연락처',
             dataIndex: ['USERS', 'phone'],
             key: 'phone',
+            render: (phone: string) => formatPhoneNumber(phone),
         },
         {
             title: '소개',
@@ -170,6 +182,10 @@ const DesignerSettings: React.FC = () => {
 
                     <Form.Item label="소개글" name="intro_text">
                         <Input.TextArea rows={2} />
+                    </Form.Item>
+
+                    <Form.Item label="프로필 사진" name="profile_img">
+                        <ImageUpload category="designers" />
                     </Form.Item>
 
                     {editingDesigner && (

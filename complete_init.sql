@@ -84,6 +84,8 @@ CREATE TABLE MENUS (
     duration INT DEFAULT 60 NOT NULL,
     description TEXT,
     is_deleted BOOLEAN DEFAULT FALSE,
+    type ENUM('MENU', 'CATEGORY') DEFAULT 'MENU',
+    sort_order INT DEFAULT 0,
     FOREIGN KEY (shop_id) REFERENCES SHOPS(shop_id) ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
@@ -218,12 +220,22 @@ VALUES (2, 3, 1, '친절하게 모시겠습니다.', '11:00:00', '21:00:00', TRU
 
 
 -- 4-4. MENUS (SHOPS 참조)
-INSERT INTO MENUS (menu_id, shop_id, name, price, duration, description)
+-- Categories (1~5)
+INSERT INTO MENUS (menu_id, shop_id, name, type, sort_order)
 VALUES 
-(1, 1, '남성 디자인 커트', 25000, 30, '두상에 맞춘 세련된 커트'),
-(2, 1, '여성 셋팅펌', 120000, 120, '손상 없는 프리미엄 펌'),
-(3, 1, '전체 염색', 80000, 90, '퍼스널 컬러 맞춤 염색'),
-(4, 1, '두피 케어', 50000, 60, '시원한 쿨링 스파');
+(1, 1, '컷', 'CATEGORY', 1),
+(2, 1, '펌', 'CATEGORY', 2),
+(3, 1, '컬러', 'CATEGORY', 3),
+(4, 1, '클리닉', 'CATEGORY', 4),
+(5, 1, '기타', 'CATEGORY', 5);
+
+-- Menus (6~)
+INSERT INTO MENUS (menu_id, shop_id, category, name, price, duration, description, type)
+VALUES 
+(6, 1, '컷', '남성 디자인 커트', 25000, 30, '두상에 맞춘 세련된 커트', 'MENU'),
+(7, 1, '펌', '여성 셋팅펌', 120000, 120, '손상 없는 프리미엄 펌', 'MENU'),
+(8, 1, '컬러', '전체 염색', 80000, 90, '퍼스널 컬러 맞춤 염색', 'MENU'),
+(9, 1, '클리닉', '두피 케어', 50000, 60, '시원한 쿨링 스파', 'MENU');
 
 
 -- 4-5. RESERVATIONS (SHOPS, USERS, DESIGNERS 참조)
@@ -294,29 +306,29 @@ VALUES (10, 1, 7, 2, CONCAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), ' 01:00:00'), C
 -- 4-X. Additional Items & Payments
 -- 예약 5 (두피 케어)
 INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-VALUES (5, 5, 4, '두피 케어', 50000);
+VALUES (5, 5, 9, '두피 케어', 50000);
 
 -- 예약 6 (염색)
 INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-VALUES (6, 6, 3, '전체 염색', 80000);
+VALUES (6, 6, 8, '전체 염색', 80000);
 
 -- 예약 7 (커트)
 INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-VALUES (7, 7, 1, '남성 디자인 커트', 25000);
+VALUES (7, 7, 6, '남성 디자인 커트', 25000);
 INSERT INTO PAYMENTS (payment_id, reservation_id, type, amount, status, paid_at)
 VALUES (2, 7, 'SITE_CASH', 25000, 'PAID', CONCAT(CURDATE(), ' 06:30:00'));
 
 -- 예약 8 (펌)
 INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-VALUES (8, 8, 2, '여성 셋팅펌', 120000);
+VALUES (8, 8, 7, '여성 셋팅펌', 120000);
 
 -- 예약 9 (두피 케어)
 INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-VALUES (9, 9, 4, '두피 케어', 50000);
+VALUES (9, 9, 9, '두피 케어', 50000);
 
 -- 예약 10 (커트)
 INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-VALUES (10, 10, 1, '남성 디자인 커트', 25000);
+VALUES (10, 10, 6, '남성 디자인 커트', 25000);
 
 
 -- 4-8. SCHEDULE_BLOCKS (DESIGNERS 참조)

@@ -12,16 +12,22 @@ import { getShop, ShopDTO } from '../../api/shops';
 import { debounce } from 'lodash';
 import NewCustomerModal from '../common/NewCustomerModal';
 
+import { formatPhoneNumber } from '../../utils/format';
+
 interface NewReservationModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: CreateReservationDTO) => void;
+    initialData?: {
+        date?: dayjs.Dayjs;
+        designerId?: string; // string because activeDesignerId is string 'all' or 'number'
+    } | null;
 }
 
 const { Option } = Select;
 const stringSet = STRINGS.SCHEDULE.NEW_RESERVATION_MODAL;
 
-const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
 
@@ -30,7 +36,7 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
     const [menus, setMenus] = useState<MenuDTO[]>([]);
     const [shop, setShop] = useState<ShopDTO | null>(null);
 
-    // 초기 데이터 로드
+    // 초기 데이터 로드 & Form Init
     React.useEffect(() => {
         if (isOpen) {
             const fetchData = async () => {
@@ -43,14 +49,32 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
                     setDesigners(loadedDesigners);
                     setMenus(loadedMenus);
                     setShop(loadedShop);
-                    console.log('[Frontend] NewReservationModal shop loaded:', loadedShop);
                 } catch (error) {
                     console.error('Failed to load initial data:', error);
                 }
             };
             fetchData();
+
+            // Set Initial Values from Prop
+            if (initialData) {
+                const updates: any = {};
+                if (initialData.date) {
+                    updates.date = initialData.date;
+                    updates.time = initialData.date; // TimePicker uses same dayjs object usually
+                }
+                if (initialData.designerId && initialData.designerId !== 'all') {
+                    updates.designerId = Number(initialData.designerId);
+                }
+                form.setFieldsValue(updates);
+            } else {
+                // Default if no initial data
+                form.setFieldsValue({
+                    date: dayjs(),
+                    time: dayjs().startOf('hour').add(10, 'minute'), // Just a default
+                });
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, initialData, form]);
 
     // 시간 제한 로직
     const disabledTime = (_current: dayjs.Dayjs) => {
@@ -103,7 +127,7 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
         setUserOptions([newUser]);
         form.setFieldsValue({
             customer_id: newUser.user_id, // value
-            customer_label: `${newUser.name} (${newUser.phone})` // label (if needed for display logic, distinct from value)
+            customer_label: `${newUser.name} (${formatPhoneNumber(newUser.phone)})` // label (if needed for display logic, distinct from value)
         });
 
         // AntD Select의 경우, 옵션이 있어야 value가 매핑되어 보임.
@@ -165,16 +189,42 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
                 treatment_id: values.treatmentId ? Number(values.treatmentId) : undefined,
             };
 
-            const submitReservation = async () => {
+            const submitReservation = async (force: boolean = false) => {
                 try {
-                    await createReservation(reservationData);
-                    onSubmit(reservationData);
+                    const payload = { ...reservationData, force };
+                    const response = await createReservation(payload);
+
+                    // Handle 200 OK Conflict (Shop Closed, Hours, Work/Lunch Conflict)
+                    if (response && response.status === 'CONFLICT') {
+                        Modal.confirm({
+                            title: '예약 확인',
+                            content: response.message,
+                            okText: '예약 (무시하고 진행)',
+                            cancelText: '취소',
+                            onOk: () => {
+                                // Re-try with force=true
+                                submitReservation(true);
+                            },
+                            onCancel: () => setLoading(false),
+                        });
+                        return;
+                    }
+
+                    onSubmit(payload);
                     setLoading(false);
                     form.resetFields();
                     onClose();
-                } catch (err) {
+                } catch (err: any) {
                     console.error('Failed to create reservation:', err);
-                    message.error('예약 생성에 실패했습니다. 입력 정보를 확인해주세요.');
+
+                    const errorMsg = err.response?.data?.message;
+                    if (Array.isArray(errorMsg)) {
+                        message.error(errorMsg.join(', '));
+                    } else if (errorMsg) {
+                        message.error(errorMsg);
+                    } else {
+                        message.error('예약 생성에 실패했습니다. 입력 정보를 확인해주세요.');
+                    }
                     setLoading(false);
                 }
             };
@@ -190,7 +240,7 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
                     cancelText: STRINGS.COMMON.CANCEL,
                 });
             } else {
-                await submitReservation();
+                await submitReservation(false);
             }
 
         } catch (error) {
@@ -221,7 +271,6 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
                     layout="vertical"
                     initialValues={{
                         status: 'CONFIRMED' as ReservationStatus,
-                        date: dayjs(),
                         alarm: true,
                     }}
                 >
@@ -242,7 +291,7 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
                                     notFoundContent={isSearching ? <Spin size="small" /> : null}
                                     options={userOptions.map(u => ({
                                         value: u.user_id,
-                                        label: `${u.name} (${u.phone})`
+                                        label: `${u.name} (${formatPhoneNumber(u.phone)})`
                                     }))}
                                 />
                             </Form.Item>
@@ -281,11 +330,13 @@ const NewReservationModal: React.FC<NewReservationModalProps> = ({ isOpen, onClo
                             style={{ width: 220 }}
                         >
                             <Select placeholder="시술 선택">
-                                {menus.map(menu => (
-                                    <Option key={menu.menu_id} value={menu.menu_id}>
-                                        {menu.name} ({menu.price.toLocaleString()}원)
-                                    </Option>
-                                ))}
+                                {menus
+                                    .filter(m => m.type !== 'CATEGORY')
+                                    .map(menu => (
+                                        <Option key={menu.menu_id} value={menu.menu_id}>
+                                            {menu.name} ({menu.price.toLocaleString()}원)
+                                        </Option>
+                                    ))}
                             </Select>
                         </Form.Item>
 

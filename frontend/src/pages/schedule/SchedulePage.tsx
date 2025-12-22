@@ -16,9 +16,12 @@ import ReservationDetailModal from '../../components/schedule/ReservationDetailM
 import { CreateReservationDTO } from '../../types/reservation';
 import { getShop, ShopDTO } from '../../api/shops';
 import { EventClickArg } from '@fullcalendar/core';
+import { DateClickArg } from '@fullcalendar/interaction';
 import styled from 'styled-components';
 
 const { Content } = Layout;
+
+// ... (Styles remain same)
 
 const CalendarWrapper = styled.div`
   .fc {
@@ -31,16 +34,18 @@ const CalendarWrapper = styled.div`
 `;
 
 const SchedulePage: React.FC = () => {
+    // ... (Refs and State remain same)
     const calendarRef = useRef<FullCalendar>(null);
     const [currentDate, setCurrentDate] = useState<Date>(new Date());
-    const [viewType, setViewType] = useState<string>('timeGridDay'); // Standard View
+    const [viewType, setViewType] = useState<string>('timeGridDay');
     const [activeDesignerId, setActiveDesignerId] = useState<string>('all');
 
-    // Designers State (Simulated/Fetched) - For Tabs
+    // ... (Data Fetching remains same)
     const [designers, setDesigners] = useState<any[]>([]);
     const [shopInfo, setShopInfo] = useState<ShopDTO | null>(null);
 
     React.useEffect(() => {
+        // ... (Fetch logic remains same)
         const fetchData = async () => {
             try {
                 // Fetch Shop Info (Default 1 for now)
@@ -69,10 +74,25 @@ const SchedulePage: React.FC = () => {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
 
+    // State for passing clicked date/resource to Modal
+    const [modalInitialData, setModalInitialData] = useState<{ date?: dayjs.Dayjs, designerId?: string } | null>(null);
+
     const handleEventClick = (info: EventClickArg) => {
         const reservationId = info.event.id;
         setSelectedReservationId(reservationId);
         setIsDetailModalOpen(true);
+    };
+
+    // NEW: Handle Empty Slot Click
+    const handleDateClick = (arg: DateClickArg) => {
+        // arg.date is a JS Date object
+        console.log('Date Clicked:', arg.date);
+
+        setModalInitialData({
+            date: dayjs(arg.date),
+            designerId: activeDesignerId // Pass current tab's designer (or 'all')
+        });
+        setIsReservationModalOpen(true);
     };
 
     const handleCloseDetailModal = () => {
@@ -84,6 +104,7 @@ const SchedulePage: React.FC = () => {
         refetch();
     };
 
+    // ... (Theme token, queryParams, refetch remain same - no changes needed there)
     const {
         token: { colorBgContainer, borderRadiusLG },
     } = theme.useToken();
@@ -108,10 +129,8 @@ const SchedulePage: React.FC = () => {
 
     const { data: reservations, refetch } = useReservations(queryParams);
 
-    // Helper: Map Day String to Integer (0=Sun, 1=Mon...)
+    // ... (Helper functions remain same)
     const dayToJsonInt = (dayStr: string) => {
-        // Normalize: uppercase first letter, rest lowercase? Or just strict map for now.
-        // DB seems to return "Thu".
         const map: { [key: string]: number } = {
             'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6,
             'SUN': 0, 'MON': 1, 'TUE': 2, 'WED': 3, 'THU': 4, 'FRI': 5, 'SAT': 6
@@ -119,7 +138,7 @@ const SchedulePage: React.FC = () => {
         return map[dayStr] ?? -1;
     };
 
-    // Filter Events by Tab & Add Background Events
+    // ... (Event filtering remains same)
     const events = useMemo(() => {
         let allEvents: any[] = [];
 
@@ -200,7 +219,7 @@ const SchedulePage: React.FC = () => {
         return allEvents;
     }, [reservations, activeDesignerId, shopInfo, designers]);
 
-    // Navigation Handlers
+    // ... (Navigation Handlers remain same)
     const handlePrev = () => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
@@ -230,7 +249,10 @@ const SchedulePage: React.FC = () => {
         }
     };
 
-    const handleOpenModal = () => setIsReservationModalOpen(true);
+    const handleOpenModal = () => {
+        setModalInitialData(null); // Reset if opening via button
+        setIsReservationModalOpen(true);
+    };
     const handleCloseModal = () => setIsReservationModalOpen(false);
     const handleCreateReservation = (_data: CreateReservationDTO) => {
         refetch();
@@ -310,6 +332,7 @@ const SchedulePage: React.FC = () => {
                             height="auto"
                             events={events} // Filtered events only
                             eventClick={handleEventClick}
+                            dateClick={handleDateClick}
                             eventContent={(eventInfo) => {
                                 const { title, extendedProps } = eventInfo.event;
                                 return (
@@ -330,6 +353,7 @@ const SchedulePage: React.FC = () => {
                 isOpen={isReservationModalOpen}
                 onClose={handleCloseModal}
                 onSubmit={handleCreateReservation}
+                initialData={modalInitialData}
             />
 
             <ReservationDetailModal

@@ -46,5 +46,8 @@ coverage/
 frontend/coverage/
 backend/coverage/
 
+# Uploads
+backend/uploads/
+
 # Local Config
 frontend/src/constants/config.ts

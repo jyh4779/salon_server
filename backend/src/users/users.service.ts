@@ -10,6 +10,11 @@ export class UsersService {
     async create(data: any) {
         const { memo, ...userData } = data;
 
+        // Phone sanitization
+        if (userData.phone) {
+            userData.phone = userData.phone.replace(/-/g, '');
+        }
+
         // 1. 유저 생성
         const newUser = await this.prisma.uSERS.create({
             data: {
@@ -41,9 +46,10 @@ export class UsersService {
         };
 
         if (search) {
+            const cleanSearch = search.replace(/-/g, '');
             whereCondition.OR = [
                 { name: { contains: search } },
-                { phone: { contains: search } },
+                { phone: { contains: cleanSearch } },
             ];
         }
 

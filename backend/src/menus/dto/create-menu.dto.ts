@@ -1,7 +1,30 @@
+import { IsString, IsNumber, IsOptional, IsEnum } from 'class-validator';
+
 export class CreateMenuDto {
+    @IsString()
+    @IsOptional()
     category?: string;
+
+    @IsString()
     name: string;
-    price: number;
-    duration: number; // in minutes
+
+    @IsNumber()
+    @IsOptional()
+    price?: number;
+
+    @IsNumber()
+    @IsOptional()
+    duration?: number; // in minutes
+
+    @IsString()
+    @IsOptional()
     description?: string;
+
+    @IsEnum(['MENU', 'CATEGORY'])
+    @IsOptional()
+    type?: 'MENU' | 'CATEGORY';
+
+    @IsNumber()
+    @IsOptional()
+    sort_order?: number;
 }

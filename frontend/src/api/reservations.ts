@@ -10,8 +10,9 @@ export const getReservations = async (params: GetReservationsParams): Promise<Re
     return response.data;
 };
 
-export const createReservation = async (data: CreateReservationDTO): Promise<void> => {
-    await api.post('/reservations', data);
+export const createReservation = async (data: CreateReservationDTO): Promise<any> => {
+    const response = await api.post('/reservations', data);
+    return response.data;
 };
 
 export const getReservation = async (id: string): Promise<ReservationDTO> => {
@@ -19,8 +20,9 @@ export const getReservation = async (id: string): Promise<ReservationDTO> => {
     return response.data;
 };
 
-export const updateReservation = async (id: string, data: Partial<CreateReservationDTO>): Promise<void> => {
-    await api.patch(`/reservations/${id}`, data);
+export const updateReservation = async (id: string, data: Partial<CreateReservationDTO>): Promise<any> => {
+    const response = await api.patch(`/reservations/${id}`, data);
+    return response.data;
 };
 
 export interface CompleteReservationData {

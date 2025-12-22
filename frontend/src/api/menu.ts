@@ -11,6 +11,8 @@ export interface MenuDTO {
     duration: number;
     description?: string;
     is_deleted?: boolean;
+    type?: 'MENU' | 'CATEGORY';
+    sort_order?: number;
 }
 
 export const getMenus = async (shopId: number = 1): Promise<MenuDTO[]> => {

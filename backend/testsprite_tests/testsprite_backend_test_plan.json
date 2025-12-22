@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "auth login functionality",
+    "description": "Test the user login API to verify that valid email and password combinations return authentication tokens and invalid credentials return appropriate error messages."
+  },
+  {
+    "id": "TC002",
+    "title": "auth logout functionality",
+    "description": "Test the user logout API to ensure that the session and tokens are properly invalidated and the user is logged out securely."
+  },
+  {
+    "id": "TC003",
+    "title": "auth token refresh functionality",
+    "description": "Test the token refresh API to verify that a valid refresh token returns a new access token and invalid or expired tokens are handled correctly."
+  },
+  {
+    "id": "TC004",
+    "title": "menus retrieval and creation",
+    "description": "Test the menus API to verify that menus can be retrieved for a shop and new menus can be created with valid data, including category handling."
+  },
+  {
+    "id": "TC005",
+    "title": "menus update and deletion",
+    "description": "Test the menus API to verify that existing menus can be updated and deleted correctly, and changes are reflected immediately."
+  },
+  {
+    "id": "TC006",
+    "title": "reservations listing and creation",
+    "description": "Test the reservations API to verify that reservations can be listed with filters and new reservations can be created with valid customer, menu, designer, date, and time data."
+  },
+  {
+    "id": "TC007",
+    "title": "reservations update and deletion",
+    "description": "Test the reservations API to verify that reservation details and status can be updated and reservations can be deleted as needed."
+  },
+  {
+    "id": "TC008",
+    "title": "reservations completion with payment",
+    "description": "Test the reservation completion API to verify that reservations can be marked as completed with payment recording and appropriate status changes."
+  },
+  {
+    "id": "TC009",
+    "title": "designers management",
+    "description": "Test the designers API to verify that designers can be listed, created, and updated, including status changes affecting reservation creation."
+  },
+  {
+    "id": "TC010",
+    "title": "shops information management",
+    "description": "Test the shops API to verify that shop information can be retrieved and updated correctly."
+  }
+]

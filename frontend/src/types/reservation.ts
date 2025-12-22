@@ -46,4 +46,5 @@ export interface CreateReservationDTO {
     alarm_enabled?: boolean;
     treatment_id?: number;
     price?: number;
+    force?: boolean;
 }

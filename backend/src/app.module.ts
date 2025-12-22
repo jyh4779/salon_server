@@ -10,6 +10,13 @@ import { ShopsModule } from './shops/shops.module';
 import { CustomersModule } from './customers/customers.module';
 import { SalesModule } from './sales/sales.module';
 import { AuthModule } from './auth/auth.module';
+import { UploadsModule } from './uploads/uploads.module';
+import { VisitLogsModule } from './visit-logs/visit-logs.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { UPLOAD_ROOT } from './config/upload.config';
+
+import { TimeModule } from './common/time/time.module';
 
 @Module({
     imports: [
@@ -17,6 +24,7 @@ import { AuthModule } from './auth/auth.module';
             isGlobal: true,
             load: [databaseConfig],
         }),
+        TimeModule,
         PrismaModule,
         UsersModule,
         ShopsModule,
@@ -26,6 +34,12 @@ import { AuthModule } from './auth/auth.module';
         CustomersModule,
         SalesModule,
         AuthModule,
+        UploadsModule,
+        VisitLogsModule,
+        ServeStaticModule.forRoot({
+            rootPath: UPLOAD_ROOT,
+            serveRoot: '/uploads',
+        }),
     ],
     providers: [],
 })

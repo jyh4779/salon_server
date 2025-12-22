@@ -11,15 +11,18 @@ export class MenusService {
                 shop_id: BigInt(shopId),
                 is_deleted: false,
             },
-            orderBy: {
-                price: 'asc',
-            },
+            orderBy: [
+                { sort_order: 'asc' },
+                { price: 'asc' },
+            ],
         });
 
         return menus.map(m => ({
             ...m,
             menu_id: m.menu_id.toString(),
             shop_id: m.shop_id.toString(),
+            type: m.type,
+            sort_order: m.sort_order,
         }));
     }
 
@@ -32,9 +35,17 @@ export class MenusService {
                 price: data.price,
                 duration: data.duration,
                 description: data.description || '',
+                type: data.type || 'MENU',
+                sort_order: data.sort_order || 0,
             }
         });
-        return { ...menu, menu_id: menu.menu_id.toString(), shop_id: menu.shop_id.toString() };
+        return {
+            ...menu,
+            menu_id: menu.menu_id.toString(),
+            shop_id: menu.shop_id.toString(),
+            type: menu.type,
+            sort_order: menu.sort_order
+        };
     }
 
     async update(menuId: number, data: any) {
@@ -42,7 +53,13 @@ export class MenusService {
             where: { menu_id: BigInt(menuId) },
             data: data
         });
-        return { ...menu, menu_id: menu.menu_id.toString(), shop_id: menu.shop_id.toString() };
+        return {
+            ...menu,
+            menu_id: menu.menu_id.toString(),
+            shop_id: menu.shop_id.toString(),
+            type: menu.type,
+            sort_order: menu.sort_order
+        };
     }
 
     async remove(menuId: number) {
@@ -50,6 +67,12 @@ export class MenusService {
             where: { menu_id: BigInt(menuId) },
             data: { is_deleted: true }
         });
-        return { ...menu, menu_id: menu.menu_id.toString(), shop_id: menu.shop_id.toString() };
+        return {
+            ...menu,
+            menu_id: menu.menu_id.toString(),
+            shop_id: menu.shop_id.toString(),
+            type: menu.type,
+            sort_order: menu.sort_order
+        };
     }
 }

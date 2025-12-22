@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TimeService } from '../common/time/time.service';
 
 @Injectable()
 export class DesignersService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private timeService: TimeService // Inject TimeService
+    ) { }
 
     async findAll(shopId: number) {
         const designers = await this.prisma.dESIGNERS.findMany({
@@ -26,10 +30,10 @@ export class DesignersService {
             designer_id: d.designer_id.toString(),
             user_id: d.user_id.toString(),
             shop_id: d.shop_id.toString(),
-            work_start: d.work_start ? d.work_start.toISOString().split('T')[1].substring(0, 5) : null,
-            work_end: d.work_end ? d.work_end.toISOString().split('T')[1].substring(0, 5) : null,
-            lunch_start: d.lunch_start ? d.lunch_start.toISOString().split('T')[1].substring(0, 5) : null,
-            lunch_end: d.lunch_end ? d.lunch_end.toISOString().split('T')[1].substring(0, 5) : null,
+            work_start: this.timeService.toUtcTimeStr(d.work_start),
+            work_end: this.timeService.toUtcTimeStr(d.work_end),
+            lunch_start: this.timeService.toUtcTimeStr(d.lunch_start),
+            lunch_end: this.timeService.toUtcTimeStr(d.lunch_end),
             userName: d.USERS?.name,
             userPhone: d.USERS?.phone,
         }));
@@ -41,11 +45,14 @@ export class DesignersService {
 
         timeFields.forEach(field => {
             if (data[field]) {
-                updateData[field] = new Date(`1970-01-01T${data[field]}:00Z`);
+                updateData[field] = this.timeService.parseUtcTime(data[field]);
             }
         });
 
         if (data.name || data.phone) {
+            // Phone sanitization
+            const cleanPhone = data.phone ? data.phone.replace(/-/g, '') : undefined;
+
             // Find linked user_id first
             const currentDesigner = await this.prisma.dESIGNERS.findUnique({
                 where: { designer_id: BigInt(id) },
@@ -57,7 +64,7 @@ export class DesignersService {
                     where: { user_id: currentDesigner.user_id },
                     data: {
                         name: data.name,
-                        phone: data.phone,
+                        phone: cleanPhone,
                     }
                 });
             }
@@ -78,17 +85,19 @@ export class DesignersService {
             designer_id: designer.designer_id.toString(),
             user_id: designer.user_id.toString(),
             shop_id: designer.shop_id.toString(),
-            work_start: designer.work_start ? designer.work_start.toISOString().split('T')[1].substring(0, 5) : null,
-            work_end: designer.work_end ? designer.work_end.toISOString().split('T')[1].substring(0, 5) : null,
-            lunch_start: designer.lunch_start ? designer.lunch_start.toISOString().split('T')[1].substring(0, 5) : null,
-            lunch_end: designer.lunch_end ? designer.lunch_end.toISOString().split('T')[1].substring(0, 5) : null,
+            work_start: this.timeService.toUtcTimeStr(designer.work_start),
+            work_end: this.timeService.toUtcTimeStr(designer.work_end),
+            lunch_start: this.timeService.toUtcTimeStr(designer.lunch_start),
+            lunch_end: this.timeService.toUtcTimeStr(designer.lunch_end),
             userName: designer.USERS?.name,
         };
     }
     async create(shopId: number, data: any) {
+        const cleanPhone = data.phone.replace(/-/g, '');
+
         // 1. Check if user exists by phone
         let user = await this.prisma.uSERS.findFirst({
-            where: { phone: data.phone }
+            where: { phone: cleanPhone }
         });
 
         // 2. If not, create new user
@@ -96,9 +105,9 @@ export class DesignersService {
             user = await this.prisma.uSERS.create({
                 data: {
                     name: data.name,
-                    phone: data.phone,
+                    phone: cleanPhone,
                     role: 'DESIGNER', // Or use existing role enum if any
-                    created_at: new Date(),
+                    created_at: this.timeService.now().toDate(),
                 }
             });
         }
@@ -109,6 +118,7 @@ export class DesignersService {
                 shop_id: BigInt(shopId),
                 user_id: user.user_id,
                 intro_text: data.intro_text,
+                profile_img: data.profile_img,
                 is_active: true,
             },
             include: { USERS: true }
