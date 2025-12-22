@@ -11,7 +11,7 @@ services:
       - MARIADB_ROOT_PASSWORD=password
       - TZ=Asia/Seoul
     volumes:
-      - ./mariadb_data:/var/lib/mysql
+      - /app/docker/mariadb_data:/var/lib/mysql
 
   backend:
     build:
