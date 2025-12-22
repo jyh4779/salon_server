@@ -12,6 +12,7 @@ export interface CreateVisitLogDTO {
 export interface VisitLogDTO extends CreateVisitLogDTO {
     log_id: string;
     visited_at: string;
+    menu_names?: string[];
 }
 
 export const createVisitLog = async (data: CreateVisitLogDTO): Promise<VisitLogDTO> => {

@@ -42,7 +42,10 @@ export class VisitLogsService {
             include: {
                 DESIGNERS: {
                     include: { USERS: true }
-                } // To show designer name if needed
+                }, // To show designer name if needed
+                RESERVATIONS: {
+                    include: { RESERVATION_ITEMS: true }
+                }
             }
         });
 
@@ -57,6 +60,7 @@ export class VisitLogsService {
             reservation_id: log.reservation_id.toString(),
             designer_id: log.designer_id.toString(),
             photo_urls: log.photo_urls ? JSON.parse(log.photo_urls) : [],
+            menu_names: log.RESERVATIONS?.RESERVATION_ITEMS?.map((item: any) => item.menu_name) || [],
         };
     }
 }

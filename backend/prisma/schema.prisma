@@ -56,6 +56,7 @@ model MENUS {
   price             Int                 @default(0)
   duration          Int                 @default(60)
   description       String?             @db.Text
+  thumbnail_url     String?             @db.VarChar(255)
   is_deleted        Boolean?            @default(false)
   type              MENUS_type          @default(MENU)
   sort_order        Int                 @default(0)

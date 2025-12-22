@@ -20,6 +20,10 @@ export class CreateMenuDto {
     @IsOptional()
     description?: string;
 
+    @IsString()
+    @IsOptional()
+    thumbnail_url?: string;
+
     @IsEnum(['MENU', 'CATEGORY'])
     @IsOptional()
     type?: 'MENU' | 'CATEGORY';

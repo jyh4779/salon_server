@@ -21,6 +21,10 @@ export class UpdateMenuDto {
     @IsOptional()
     description?: string;
 
+    @IsString()
+    @IsOptional()
+    thumbnail_url?: string;
+
     @IsBoolean()
     @IsOptional()
     is_deleted?: boolean;

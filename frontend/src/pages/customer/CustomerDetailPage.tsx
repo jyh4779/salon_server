@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout, Typography, Card, Descriptions, Tag, Table, List, Flex, Skeleton, Button, message, Modal, Input, Space } from 'antd';
 import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
 import { getCustomer, CustomerDetail, createMemo } from '../../api/customers';
-import { formatPhoneNumber } from '../../utils/format';
+import { formatPhoneNumber, formatDateTime, formatDate } from '../../utils/format';
 import ReservationDetailModal from '../../components/schedule/ReservationDetailModal';
+import CustomerGallery from './components/CustomerGallery';
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -87,7 +87,7 @@ const CustomerDetailPage: React.FC = () => {
             title: '날짜',
             dataIndex: 'date',
             key: 'date',
-            render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm'),
+            render: (date: string) => formatDateTime(date),
         },
         {
             title: '상태',
@@ -183,7 +183,7 @@ const CustomerDetailPage: React.FC = () => {
                                                 <Flex justify="space-between" align="center">
                                                     <Space>
                                                         {item.type === 'RESERVATION' ? <Tag color="blue">예약</Tag> : <Tag color="default">일반</Tag>}
-                                                        <Text type="secondary" style={{ fontSize: 12 }}>{dayjs(item.created_at).format('YYYY-MM-DD')}</Text>
+                                                        <Text type="secondary" style={{ fontSize: 12 }}>{formatDate(item.created_at)}</Text>
                                                     </Space>
                                                 </Flex>
                                             }
@@ -196,6 +196,11 @@ const CustomerDetailPage: React.FC = () => {
                             />
                         </Card>
                     </Flex>
+
+                    {/* Photo Gallery */}
+                    <Card title="시술 갤러리" size="small">
+                        <CustomerGallery customerId={Number(id)} />
+                    </Card>
                 </Flex>
             </div>
             <ReservationDetailModal

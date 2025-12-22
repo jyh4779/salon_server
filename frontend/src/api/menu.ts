@@ -10,6 +10,7 @@ export interface MenuDTO {
     price: number;
     duration: number;
     description?: string;
+    thumbnail_url?: string;
     is_deleted?: boolean;
     type?: 'MENU' | 'CATEGORY';
     sort_order?: number;

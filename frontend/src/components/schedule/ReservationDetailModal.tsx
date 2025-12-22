@@ -10,7 +10,7 @@ import { createVisitLog, getVisitLogByReservation } from '../../api/visitLogs';
 import ImageUpload from '../common/ImageUpload';
 import { RESERVATION_STATUS_COLORS, STRINGS } from '../../constants/strings';
 import PaymentConfirmationModal from './PaymentConfirmationModal';
-import { formatPhoneNumber } from '../../utils/format';
+import { formatPhoneNumber, formatDateTime } from '../../utils/format';
 
 interface ReservationDetailModalProps {
     isOpen: boolean;
@@ -257,7 +257,7 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                             {reservation.DESIGNERS.USERS.name}
                         </Descriptions.Item>
                         <Descriptions.Item label="일시">
-                            {dayjs(reservation.start_time).format('YYYY-MM-DD HH:mm')}
+                            {formatDateTime(reservation.start_time)}
                         </Descriptions.Item>
                         <Descriptions.Item label="시술 메뉴">
                             {reservation.RESERVATION_ITEMS?.map(item => item.menu_name).join(', ') || '-'}

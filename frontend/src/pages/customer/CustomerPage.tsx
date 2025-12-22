@@ -3,8 +3,7 @@ import { Table, Input, Button, Layout, theme, Typography, Tag, Space } from 'ant
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import dayjs from 'dayjs';
-import { formatPhoneNumber } from '../../utils/format';
+import { formatPhoneNumber, formatDate } from '../../utils/format';
 import { getCustomers, CustomerStats } from '../../api/customers';
 import NewCustomerModal from '../../components/common/NewCustomerModal';
 
@@ -102,7 +101,7 @@ const CustomerPage: React.FC = () => {
                 const dateB = b.last_visit ? new Date(b.last_visit).getTime() : 0;
                 return dateA - dateB;
             },
-            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '-',
+            render: (date: string) => formatDate(date),
         },
         {
             title: '총 결제금액',

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Popconfirm } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Avatar } from 'antd';
 import { MenuDTO, getMenus, createMenu, updateMenu, deleteMenu } from '../../../api/menu';
+import ImageUpload from '../../../components/common/ImageUpload';
 
 
 
@@ -98,6 +99,12 @@ const MenuSettings: React.FC = () => {
             title: '메뉴명',
             dataIndex: 'name',
             key: 'name',
+            render: (text: string, record: MenuDTO) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {record.thumbnail_url && <Avatar src={record.thumbnail_url} shape="square" size="large" />}
+                    <span>{text}</span>
+                </div>
+            )
         },
         {
             title: '가격',
@@ -162,6 +169,9 @@ const MenuSettings: React.FC = () => {
                     </Form.Item>
                     <Form.Item label="메뉴명" name="name" rules={[{ required: true }]}>
                         <Input />
+                    </Form.Item>
+                    <Form.Item label="대표 이미지 (썸네일)" name="thumbnail_url">
+                        <ImageUpload category="menus" maxCount={1} />
                     </Form.Item>
                     <Form.Item label="가격" name="price" rules={[{ required: true }]}>
                         <InputNumber
