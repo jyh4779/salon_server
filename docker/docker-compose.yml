@@ -32,8 +32,8 @@ services:
 
   frontend:
     build:
-      context: ../frontend
-      dockerfile: ../docker/frontend/Dockerfile
+      context: ..
+      dockerfile: docker/frontend/Dockerfile
     container_name: salon-frontend
     restart: always
     ports:

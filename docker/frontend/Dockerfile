@@ -3,14 +3,14 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files (from paths relative to Root Context)
+COPY frontend/package*.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy source code
-COPY . .
+COPY frontend/ .
 
 # Build the application
 RUN npm run build
@@ -22,7 +22,7 @@ FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy custom Nginx configuration
-COPY conf.d/default.conf /etc/nginx/conf.d/default.conf
+COPY docker/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port
 EXPOSE 80
