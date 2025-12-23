@@ -1,14 +1,46 @@
 # 03. Sequence Diagrams
 
-## 1. 회원가입 및 계정 통합 (Auth & Merge)
-앱 가입 시 휴대폰 번호를 이용해 기존 오프라인 고객 데이터와 매칭하는 로직.
+## 1. 관리자 웹 로그인 (Admin Web Auth)
+관리자(원장/디자이너)가 웹 페이지에서 이메일과 비밀번호로 로그인하는 흐름입니다.
+- **JWT (JSON Web Token)** 기반의 인증을 사용합니다.
+- Access Token(15분)과 Refresh Token(7일)을 발급하여 세션을 유지합니다.
+
+```mermaid
+sequenceDiagram
+    actor Admin as 관리자(Web)
+    participant Client as Web Client
+    participant Server as API Server
+    participant DB as Database
+
+    Admin->>Client: 이메일/비밀번호 입력 & 로그인 클릭
+    Client->>Server: [POST] /api/auth/login (email, password)
+    
+    Server->>DB: SELECT * FROM Users WHERE email = ?
+    DB-->>Server: User Data (Password Hash 포함)
+    
+    Server->>Server: bcrypt.compare(password, hash)
+    
+    alt 비밀번호 일치
+        Server->>Server: JWT Access/Refresh Token 생성
+        Server->>DB: Update Refresh Token (user_id)
+        Server-->>Client: 200 OK (AccessToken, RefreshToken, UserInfo)
+        
+        Client->>Client: AccessToken 메모리 저장 / Home으로 이동
+    else 불일치 또는 유저 없음
+        Server-->>Client: 401 Unauthorized
+        Client->>Admin: 에러 메시지 표시
+    end
+```
+
+## 2. [Future] 고객용 앱: 회원가입 및 계정 통합 (Consumer App)
+추후 개발될 **고객용 모바일 앱**에서 Firebase 소셜 로그인을 통해 가입하는 시나리오입니다.
 - 앱에서 Firebase 소셜 로그인을 완료한 후, 서버에 저장된 Users 테이블을 조회합니다.
 - firebase_uid 가 없으면 신규 가입 절차로 넘어가며, 이때 phone 번호를 입력받아 기존 오프라인 고객 데이터와 매칭(DB Update) 하거나 신규 생성(DB Insert) 합니다.
 
 ```mermaid
 sequenceDiagram
     actor User
-    participant App as App (Client)
+    participant App as App (Mobile)
     participant Firebase
     participant Server as API Server
     participant DB as Database
@@ -48,7 +80,7 @@ sequenceDiagram
     end
 ```
 
-## 2. 예약 가능 시간 조회 (Time Slot Calculation)
+## 3. 예약 가능 시간 조회 (Time Slot Calculation)
 선택한 메뉴의 소요시간(Duration)을 고려하여 빈 시간을 찾는 로직.
 - 사용자가 날짜와 디자이너를 선택하면, 서버는 **(1) 디자이너 근무시간 (2) 기존 예약 (3) 스케줄 블록(휴무)** 3가지를 고려하여 '예약 가능한 시간 슬롯'만 필터링해 줍니다.
 - 이후 사용자가 슬롯을 선택하면 최종 예약을 생성합니다.
@@ -87,7 +119,7 @@ sequenceDiagram
     App->>User: 예약 가능한 시간 버튼만 활성화
 ```
 
-## 2. 디자이너 스케줄 관리 (Schedule Blocking)
+## 4. 디자이너 스케줄 관리 (Schedule Blocking)
 디자이너나 원장이 점심시간, 개인 사정 등으로 특정 시간을 막으려 할 때(SCHEDULE_BLOCKS), 해당 시간에 이미 **확정된 예약(RESERVATIONS)**이 있는지 먼저 검증해야 합니다.
 
 ```mermaid

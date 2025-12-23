@@ -51,7 +51,8 @@ model DESIGNERS {
 model MENUS {
   menu_id           BigInt              @id @default(autoincrement())
   shop_id           BigInt
-  category          String?             @db.VarChar(50)
+  category          String?             @db.VarChar(50) // Deprecated: use category_id
+  category_id       BigInt?
   name              String              @db.VarChar(100)
   price             Int                 @default(0)
   duration          Int                 @default(60)
@@ -61,9 +62,12 @@ model MENUS {
   type              MENUS_type          @default(MENU)
   sort_order        Int                 @default(0)
   SHOPS             SHOPS               @relation(fields: [shop_id], references: [shop_id], onDelete: Cascade, onUpdate: Restrict)
+  parent            MENUS?              @relation("CategoryParent", fields: [category_id], references: [menu_id], onDelete: SetNull, onUpdate: Restrict)
+  children          MENUS[]             @relation("CategoryParent")
   RESERVATION_ITEMS RESERVATION_ITEMS[]
 
   @@index([shop_id], map: "MENUS_shop_id_fkey")
+  @@index([category_id], map: "MENUS_category_id_fkey")
 }
 
 enum MENUS_type {
@@ -80,6 +84,7 @@ model PAYMENTS {
   status         PAYMENTS_status @default(PAID)
   paid_at        DateTime?       @default(now()) @db.DateTime(0)
   RESERVATIONS   RESERVATIONS    @relation(fields: [reservation_id], references: [reservation_id], onDelete: Cascade, onUpdate: Restrict)
+  PREPAID_TRANSACTIONS PREPAID_TRANSACTIONS[]
 
   @@index([reservation_id], map: "PAYMENTS_reservation_id_fkey")
 }
@@ -152,6 +157,8 @@ model SHOPS {
   DESIGNERS          DESIGNERS[]
   MENUS              MENUS[]
   RESERVATIONS       RESERVATIONS[]
+  PREPAID_TICKETS    PREPAID_TICKETS[]
+  CUSTOMER_PREPAID_BALANCES CUSTOMER_PREPAID_BALANCES[]
   USERS              USERS            @relation(fields: [owner_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict)
 
   @@index([owner_id], map: "SHOPS_owner_id_fkey")
@@ -178,6 +185,7 @@ model USERS {
   RESERVATIONS      RESERVATIONS[]
   SHOPS             SHOPS[]
   VISIT_LOGS        VISIT_LOGS[]
+  CUSTOMER_PREPAID_BALANCES CUSTOMER_PREPAID_BALANCES[]
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -201,6 +209,7 @@ enum PAYMENTS_type {
   APP_DEPOSIT
   SITE_CARD
   SITE_CASH
+  PREPAID
 }
 
 enum SCHEDULE_BLOCKS_type {
@@ -240,4 +249,59 @@ enum USERS_grade {
   NEW
   VIP
   CAUTION
+}
+
+model PREPAID_TICKETS {
+  ticket_id     BigInt    @id @default(autoincrement())
+  shop_id       BigInt
+  name          String    @db.VarChar(100)
+  price         Int
+  credit_amount Int
+  validity_days Int?
+  is_active     Boolean?  @default(true)
+  created_at    DateTime? @default(now()) @db.DateTime(0)
+  SHOPS         SHOPS     @relation(fields: [shop_id], references: [shop_id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([shop_id], map: "PREPAID_TICKETS_shop_id_fkey")
+}
+
+model CUSTOMER_PREPAID_BALANCES {
+  balance_id   BigInt    @id @default(autoincrement())
+  user_id      BigInt
+  shop_id      BigInt
+  balance      Int       @default(0)
+  last_used_at DateTime? @db.DateTime(0)
+  created_at   DateTime? @default(now()) @db.DateTime(0)
+  USERS        USERS     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict)
+  SHOPS        SHOPS     @relation(fields: [shop_id], references: [shop_id], onDelete: Cascade, onUpdate: Restrict)
+  PREPAID_TRANSACTIONS PREPAID_TRANSACTIONS[]
+
+  @@unique([user_id, shop_id], map: "user_shop_unique")
+  @@index([user_id], map: "CUSTOMER_PREPAID_BALANCES_user_id_fkey")
+  @@index([shop_id], map: "CUSTOMER_PREPAID_BALANCES_shop_id_fkey")
+}
+
+model PREPAID_TRANSACTIONS {
+  transaction_id BigInt                    @id @default(autoincrement())
+  balance_id     BigInt
+  type           PREPAID_TRANSACTIONS_type
+  amount         Int
+  bonus_amount   Int?                      @default(0)
+  balance_after  Int
+  ref_payment_id BigInt?
+  created_at     DateTime?                 @default(now()) @db.DateTime(0)
+  payment_method String?                   @default("CASH") @db.VarChar(20) // 'CARD', 'CASH'
+  CUSTOMER_PREPAID_BALANCES CUSTOMER_PREPAID_BALANCES @relation(fields: [balance_id], references: [balance_id], onDelete: Cascade, onUpdate: Restrict)
+  PAYMENTS                  PAYMENTS?                 @relation(fields: [ref_payment_id], references: [payment_id], onDelete: SetNull, onUpdate: Restrict)
+
+  @@index([balance_id], map: "PREPAID_TRANSACTIONS_balance_id_fkey")
+  @@index([ref_payment_id], map: "PREPAID_TRANSACTIONS_ref_payment_id_fkey")
+}
+
+enum PREPAID_TRANSACTIONS_type {
+  CHARGE
+  USE
+  REFUND
+  EXPIRE
+  ADJUST
 }

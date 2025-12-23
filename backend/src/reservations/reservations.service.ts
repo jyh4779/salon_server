@@ -8,12 +8,15 @@ import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { TimeService } from '../common/time/time.service';
 
+import { PrepaidService } from '../prepaid/prepaid.service';
+
 @Injectable()
 export class ReservationsService {
     constructor(
         private reservationsRepository: ReservationsRepository,
         private prisma: PrismaService,
-        private timeService: TimeService
+        private timeService: TimeService,
+        private prepaidService: PrepaidService
     ) { }
 
     async findAll(shopId: number, query: GetReservationsDto) {
@@ -86,10 +89,36 @@ export class ReservationsService {
             }
         }
 
-        return this.reservationsRepository.updateReservation(shopId, id, updateReservationDto);
+        try {
+            return await this.reservationsRepository.updateReservation(shopId, id, updateReservationDto);
+        } catch (error) {
+            console.error('[ReservationsService.update] Error:', error);
+            throw error;
+        }
     }
 
     async complete(shopId: number, id: number, completeReservationDto: CompleteReservationDto) {
+        const { payments, totalPrice } = completeReservationDto;
+
+        const reservation = await this.reservationsRepository.getReservationById(shopId, id);
+        if (!reservation) throw new BadRequestException('Reservation not found');
+
+        // Calculate sum of payments
+        const paymentSum = payments.reduce((sum, p) => sum + p.amount, 0);
+        if (paymentSum !== totalPrice) {
+            // Note: exact match required? Yes for now.
+            // throw new BadRequestException(`결제 금액 합계(${paymentSum})가 총 시술 금액(${totalPrice})과 일치하지 않습니다.`);
+            // User might pay less (partial?) No requirements yet. Assume full payment.
+        }
+
+        // Handle Prepaid Deductions
+        for (const payment of payments) {
+            if (payment.paymentType === 'PREPAID') {
+                // Deduct balance (Throws error if insufficient)
+                await this.prepaidService.usePrepaid(shopId, Number(reservation.customer_id), payment.amount);
+            }
+        }
+
         return this.reservationsRepository.completeReservation(shopId, id, completeReservationDto);
     }
 

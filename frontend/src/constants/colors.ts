@@ -32,5 +32,7 @@ export const COLORS = {
     CALENDAR: {
         UNAVAILABLE: '#8c8c8c', // 예약 불가 (휴무, 점심시간)
         HOLIDAY: '#8c8c8c', // Old Red removed, unified
-    }
+    },
+
+    CHARTS: ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
 };

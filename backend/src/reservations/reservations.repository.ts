@@ -98,15 +98,22 @@ export class ReservationsRepository {
         const { treatment_id, menu, price, ...rest } = data;
 
         // 1. Update Reservation Basic Info
+        const { designer_id, force, ...updateRest } = rest;
+
         const updatedReservation = await this.prisma.rESERVATIONS.update({
             where: {
                 reservation_id: id,
                 shop_id: BigInt(shopId),
             },
             data: {
-                ...rest,
-                start_time: rest.start_time ? new Date(rest.start_time) : undefined,
-                end_time: rest.end_time ? new Date(rest.end_time) : undefined,
+                ...updateRest,
+                ...(designer_id && {
+                    DESIGNERS: {
+                        connect: { designer_id: BigInt(designer_id) }
+                    }
+                }),
+                start_time: updateRest.start_time ? new Date(updateRest.start_time) : undefined,
+                end_time: updateRest.end_time ? new Date(updateRest.end_time) : undefined,
             }
         });
 
@@ -139,7 +146,7 @@ export class ReservationsRepository {
     }
 
     async completeReservation(shopId: number, id: number, data: any) {
-        const { totalPrice, paymentType, paymentMemo } = data;
+        const { totalPrice, payments, paymentMemo } = data;
 
         return this.prisma.$transaction(async (tx) => {
             // 1. Update Reservation Status
@@ -150,40 +157,25 @@ export class ReservationsRepository {
                 },
                 data: {
                     status: 'COMPLETED',
-                    // Optional: Update final price if it differs? 
-                    // For now, valid payment is proof of completion.
+                    request_memo: paymentMemo ? `${paymentMemo}` : undefined // Overwrite or append? Simplest is overwrite or keep logic simple.
                 }
             });
 
-            // 2. Create Payment Record
-            await tx.pAYMENTS.create({
-                data: {
-                    reservation_id: id,
-                    type: paymentType, // Enums should match
-                    amount: totalPrice,
-                    status: 'PAID',
+            // 2. Create Payment Records
+            // payments is array of { paymentType, amount }
+            if (payments && Array.isArray(payments)) {
+                for (const p of payments) {
+                    await tx.pAYMENTS.create({
+                        data: {
+                            reservation_id: id,
+                            type: p.paymentType,
+                            amount: p.amount,
+                            status: 'PAID',
+                        }
+                    });
                 }
-            });
-
-            // 3. (Optional) If memo is provided, where does it go?
-            // Payment doesn't have memo. Maybe add to reservation request_memo or logic log?
-            // Existing `VISIT_LOGS` might be a better place for detailed notes.
-            // For now, if paymentMemo exists, append to request_memo or ignore?
-            // User requirement: "결제 정보 모달... 메모... 포함"
-            // Let's append to request_memo for simplicity or ignore if no field.
-            if (paymentMemo) {
-                await tx.rESERVATIONS.update({
-                    where: {
-                        reservation_id: id,
-                        shop_id: BigInt(shopId),
-                    },
-                    data: {
-                        request_memo: paymentMemo
-                        // Or append: request_memo: `${existing.request_memo}\n[결제메모] ${paymentMemo}`
-                        // But getting existing needs a read. Let's just set it or look at VISIT_LOGS later.
-                        // Let's update request_memo for MVP.
-                    }
-                });
+            } else {
+                // Fallback for legacy calls? (Shouldn't happen with DTO valid)
             }
 
             return updatedReservation;

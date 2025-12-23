@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
     constructor(private prisma: PrismaService) { }
 
-    async create(data: any) {
+    async create(data: any, shopId?: number, writerId?: number) {
         const { memo, ...userData } = data;
 
         // Phone sanitization
@@ -20,18 +20,22 @@ export class UsersService {
             data: {
                 ...userData,
                 password: userData.password ? await bcrypt.hash(userData.password, 10) : undefined,
-                role: USERS_role.CUSTOMER,
+                role: userData.role || USERS_role.CUSTOMER,
                 grade: 'NEW',
             },
         });
 
-        // 2. 메모가 있다면 메모 생성 (작성자는 임시로 1번 관리자로 설정)
+        // 2. 메모가 있다면 메모 생성
         if (memo) {
+            // Default to 1 if not provided (for backward compatibility)
+            const resolvedShopId = shopId ? BigInt(shopId) : BigInt(1);
+            const resolvedWriterId = writerId ? BigInt(writerId) : BigInt(1);
+
             await this.prisma.cUSTOMER_MEMOS.create({
                 data: {
                     user_id: newUser.user_id,
-                    writer_id: BigInt(1), // TODO: 실제 로그인한 관리자 ID로 변경 필요
-                    shop_id: BigInt(1),   // TODO: 실제 샵 ID로 변경 필요
+                    writer_id: resolvedWriterId,
+                    shop_id: resolvedShopId,
                     content: memo,
                 },
             });
@@ -94,23 +98,6 @@ export class UsersService {
         if (!user.current_hashed_refresh_token) return null;
 
         const isMatching = await bcrypt.compare(refreshToken, user.current_hashed_refresh_token);
-
-        console.log('--- [IMPOSSIBLE MATCH DEBUG START] ---');
-        console.log(`1. Incoming Token (Last 10): ...${refreshToken.slice(-10)}`);
-        console.log(`2. DB Stored Hash (First 10): ${user.current_hashed_refresh_token.substring(0, 10)}...`);
-        console.log(`3. Compare Result: ${isMatching}`);
-
-        // Sanity Check: Is stored hash actually a hash?
-        const isHash = user.current_hashed_refresh_token.startsWith('$2b$');
-        console.log(`4. Is DB Value a Bcrypt Hash?: ${isHash}`);
-
-        console.log('--- [IMPOSSIBLE MATCH DEBUG END] ---');
-
-        if (!isMatching) {
-            console.log(`[TRAP] User ${userId} Refresh Failed.`);
-        } else {
-            console.log(`[TRAP] User ${userId} Refresh SUCCESS.`);
-        }
 
         if (isMatching) {
             return user;

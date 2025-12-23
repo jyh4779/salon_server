@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Layout, Typography, Card, Descriptions, Tag, Table, List, Flex, Skeleton, Button, message, Modal, Input, Space } from 'antd';
+import { Layout, Typography, Card, Descriptions, Tag, Table, List, Flex, Skeleton, Button, message, Modal, Input, Space, Row, Col } from 'antd';
 import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
 import { getCustomer, createMemo, CustomerDetail } from '../../api/customers';
 import { formatPhoneNumber, formatDateTime, formatDate } from '../../utils/format';
 import ReservationDetailModal from '../../components/schedule/ReservationDetailModal';
 import CustomerGallery from './components/CustomerGallery';
+import PrepaidCard from './components/PrepaidCard';
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -138,15 +139,21 @@ const CustomerDetailPage: React.FC = () => {
                 </Flex>
 
                 <Flex gap="large" vertical>
-                    {/* Basic Info */}
-                    <Card title="기본 정보" size="small">
-                        <Descriptions layout="vertical" column={4}>
-                            <Descriptions.Item label="연락처">{formatPhoneNumber(customer.phone)}</Descriptions.Item>
-                            <Descriptions.Item label="성별">{customer.gender === 'MALE' ? '남성' : '여성'}</Descriptions.Item>
-                            <Descriptions.Item label="총 방문">{customer.visit_count}회</Descriptions.Item>
-                            <Descriptions.Item label="총 결제">{customer.total_pay.toLocaleString()}원</Descriptions.Item>
-                        </Descriptions>
-                    </Card>
+                    <Row gutter={16}>
+                        <Col span={16}>
+                            <Card title="기본 정보" size="small">
+                                <Descriptions layout="vertical" column={4}>
+                                    <Descriptions.Item label="연락처">{formatPhoneNumber(customer.phone)}</Descriptions.Item>
+                                    <Descriptions.Item label="성별">{customer.gender === 'MALE' ? '남성' : '여성'}</Descriptions.Item>
+                                    <Descriptions.Item label="총 방문">{customer.visit_count}회</Descriptions.Item>
+                                    <Descriptions.Item label="총 결제">{customer.total_pay.toLocaleString()}원</Descriptions.Item>
+                                </Descriptions>
+                            </Card>
+                        </Col>
+                        <Col span={8}>
+                            <PrepaidCard shopId={Number(shopId)} customerId={Number(id)} />
+                        </Col>
+                    </Row>
 
                     <Flex gap="large" style={{ minHeight: 400 }}>
                         {/* History */}

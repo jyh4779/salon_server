@@ -6,6 +6,11 @@ export interface DailySalesStats {
     cashSales: number;
     depositSales: number;
     count: number;
+    cancelCount: number;
+    noshowCount: number;
+    newCustomerCount: number;
+    returningCustomerCount: number;
+    avgTicket: number;
 }
 
 export interface SalesTransaction {
@@ -17,17 +22,20 @@ export interface SalesTransaction {
     menus: string;
     totalPrice: number;
     paymentType: string;
+    status: string; // Added status
 }
 
 export interface DesignerSalesStats {
     name: string;
     totalSales: number;
     count: number;
+    avgTicket: number;
 }
 
 export interface MenuSalesStats {
     name: string;
-    totalSales: number;
+    totalSales: number; // Backend sends value as well, but totalSales is essentially value or I should add value if needed by Recharts directly
+    value: number; // Added for Recharts
     count: number;
 }
 
@@ -35,7 +43,7 @@ export interface DailySalesData {
     date: string;
     stats: DailySalesStats;
     designerStats: DesignerSalesStats[];
-    menuStats: MenuSalesStats[];
+    menuStats: MenuSalesStats[]; // Used for Category Chart
     reservations: SalesTransaction[];
 }
 

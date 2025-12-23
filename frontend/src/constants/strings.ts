@@ -33,6 +33,9 @@ export const STRINGS = {
         // F-SCH-002 등 향후 확장을 위한 키
         STATUSED_PENDING: '예약 대기',
         STATUSED_CONFIRMED: '예약 확정',
+        STATUSED_COMPLETED: '시술 완료',
+        STATUSED_CANCELED: '취소',
+        STATUSED_NOSHOW: '노쇼',
         NEW_RESERVATION_MODAL: {
             TITLE: '새 예약 추가',
             CUSTOMER_LABEL: '고객명/연락처',

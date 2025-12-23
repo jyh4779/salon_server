@@ -100,13 +100,25 @@ async function main() {
 
 
     // 4-4. MENUS (SHOPS 참조)
+    // Categories (Shop 1)
     await prisma.$executeRawUnsafe(`
-      INSERT INTO MENUS (menu_id, shop_id, name, price, duration, description)
+      INSERT INTO MENUS (menu_id, shop_id, name, type, sort_order)
       VALUES 
-      (1, 1, '남성 디자인 커트', 25000, 30, '두상에 맞춘 세련된 커트'),
-      (2, 1, '여성 셋팅펌', 120000, 120, '손상 없는 프리미엄 펌'),
-      (3, 1, '전체 염색', 80000, 90, '퍼스널 컬러 맞춤 염색'),
-      (4, 1, '두피 케어', 50000, 60, '시원한 쿨링 스파');
+      (1, 1, '컷', 'CATEGORY', 1),
+      (2, 1, '펌', 'CATEGORY', 2),
+      (3, 1, '컬러', 'CATEGORY', 3),
+      (4, 1, '클리닉', 'CATEGORY', 4),
+      (5, 1, '기타', 'CATEGORY', 5);
+    `);
+
+    // Menus (Shop 1) - Linked to Categories
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO MENUS (menu_id, shop_id, category_id, name, price, duration, description, type, category)
+      VALUES 
+      (6, 1, 1, '남성 디자인 커트', 25000, 30, '두상에 맞춘 세련된 커트', 'MENU', '컷'),
+      (7, 1, 2, '여성 셋팅펌', 120000, 120, '손상 없는 프리미엄 펌', 'MENU', '펌'),
+      (8, 1, 3, '전체 염색', 80000, 90, '퍼스널 컬러 맞춤 염색', 'MENU', '컬러'),
+      (9, 1, 4, '두피 케어', 50000, 60, '시원한 쿨링 스파', 'MENU', '클리닉');
     `);
 
 
@@ -140,25 +152,25 @@ async function main() {
     // 예약 1 (커트)
     await prisma.$executeRawUnsafe(`
       INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-      VALUES (1, 1, 1, '남성 디자인 커트', 25000);
+      VALUES (1, 1, 6, '남성 디자인 커트', 25000);
     `);
 
     // 예약 2 (펌)
     await prisma.$executeRawUnsafe(`
       INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-      VALUES (2, 2, 2, '여성 셋팅펌', 120000);
+      VALUES (2, 2, 7, '여성 셋팅펌', 120000);
     `);
 
     // 예약 3 (염색)
     await prisma.$executeRawUnsafe(`
       INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-      VALUES (3, 3, 3, '전체 염색', 80000);
+      VALUES (3, 3, 8, '전체 염색', 80000);
     `);
 
     // 예약 4 (커트)
     await prisma.$executeRawUnsafe(`
       INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-      VALUES (4, 4, 1, '남성 디자인 커트', 25000);
+      VALUES (4, 4, 6, '남성 디자인 커트', 25000);
     `);
 
 
@@ -209,19 +221,19 @@ async function main() {
     // 예약 5 (두피 케어)
     await prisma.$executeRawUnsafe(`
       INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-      VALUES (5, 5, 4, '두피 케어', 50000);
+      VALUES (5, 5, 9, '두피 케어', 50000);
     `);
 
     // 예약 6 (염색)
     await prisma.$executeRawUnsafe(`
       INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-      VALUES (6, 6, 3, '전체 염색', 80000);
+      VALUES (6, 6, 8, '전체 염색', 80000);
     `);
 
     // 예약 7 (커트)
     await prisma.$executeRawUnsafe(`
       INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-      VALUES (7, 7, 1, '남성 디자인 커트', 25000);
+      VALUES (7, 7, 6, '남성 디자인 커트', 25000);
     `);
 
     await prisma.$executeRawUnsafe(`
@@ -232,19 +244,19 @@ async function main() {
     // 예약 8 (펌)
     await prisma.$executeRawUnsafe(`
       INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-      VALUES (8, 8, 2, '여성 셋팅펌', 120000);
+      VALUES (8, 8, 7, '여성 셋팅펌', 120000);
     `);
 
     // 예약 9 (두피 케어)
     await prisma.$executeRawUnsafe(`
       INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-      VALUES (9, 9, 4, '두피 케어', 50000);
+      VALUES (9, 9, 9, '두피 케어', 50000);
     `);
 
     // 예약 10 (커트)
     await prisma.$executeRawUnsafe(`
       INSERT INTO RESERVATION_ITEMS (item_id, reservation_id, menu_id, menu_name, price)
-      VALUES (10, 10, 1, '남성 디자인 커트', 25000);
+      VALUES (10, 10, 6, '남성 디자인 커트', 25000);
     `);
 
 

@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { Layout, Typography, Card, Table, DatePicker, Row, Col, Statistic, message, Tabs, Button } from 'antd';
-import { LeftOutlined, RightOutlined } from '@ant-design/icons';
+import React, { useEffect, useState, useRef } from 'react';
+import { Layout, Typography, Card, Table, DatePicker, Row, Col, Statistic, message, Tabs, Button, Tag } from 'antd';
+import { LeftOutlined, RightOutlined, UserOutlined, MehOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { getDailySales, DailySalesData, SalesTransaction } from '../../api/sales';
 import { COLORS } from '../../constants/colors';
 
 const { Content } = Layout;
 const { Title } = Typography;
+
+
 
 const SalesPage: React.FC = () => {
     const navigate = useNavigate();
@@ -15,6 +18,30 @@ const SalesPage: React.FC = () => {
     const [date, setDate] = useState(dayjs());
     const [data, setData] = useState<DailySalesData | null>(null);
     const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('1');
+    const [chartWidth, setChartWidth] = useState(0);
+    const observer = useRef<ResizeObserver | null>(null);
+
+    const onResizeRef = (node: HTMLDivElement | null) => {
+        if (node) {
+            if (observer.current) observer.current.disconnect();
+
+            observer.current = new ResizeObserver((entries) => {
+                const width = entries[0]?.contentRect.width;
+                if (width && width > 0) {
+                    setChartWidth(width);
+                }
+            });
+
+            observer.current.observe(node);
+
+            if (node.offsetWidth > 0) {
+                setChartWidth(node.offsetWidth);
+            }
+        } else {
+            if (observer.current) observer.current.disconnect();
+        }
+    };
 
     useEffect(() => {
         fetchSales(date.format('YYYY-MM-DD'));
@@ -43,6 +70,16 @@ const SalesPage: React.FC = () => {
             sorter: (a: SalesTransaction, b: SalesTransaction) => new Date(a.time).getTime() - new Date(b.time).getTime(),
         },
         {
+            title: '상태',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status: string) => {
+                if (status === 'NOSHOW') return <Tag color="error">노쇼</Tag>;
+                if (status === 'CANCELED') return <Tag color="default">취소</Tag>;
+                return <Tag color="success">완료</Tag>;
+            }
+        },
+        {
             title: '고객명',
             dataIndex: 'customer',
             key: 'customer',
@@ -63,11 +100,6 @@ const SalesPage: React.FC = () => {
             key: 'designer',
         },
         {
-            title: '결제 수단',
-            dataIndex: 'paymentType',
-            key: 'paymentType',
-        },
-        {
             title: '결제 금액',
             dataIndex: 'totalPrice',
             key: 'totalPrice',
@@ -77,9 +109,40 @@ const SalesPage: React.FC = () => {
         },
     ];
 
-    const statsColumns = [
+    const designerColumns = [
         {
-            title: '구분',
+            title: '디자이너',
+            dataIndex: 'name',
+            key: 'name',
+            render: (text: string) => <span style={{ fontWeight: 'bold' }}>{text}</span>,
+        },
+        {
+            title: '시술 건수',
+            dataIndex: 'count',
+            key: 'count',
+            align: 'right' as const,
+            render: (count: number) => `${count}건`,
+        },
+        {
+            title: '객단가',
+            dataIndex: 'avgTicket',
+            key: 'avgTicket',
+            align: 'right' as const,
+            render: (price: number) => `${price.toLocaleString()}원`,
+        },
+        {
+            title: '총 매출',
+            dataIndex: 'totalSales',
+            key: 'totalSales',
+            align: 'right' as const,
+            render: (price: number) => <span style={{ color: COLORS.STATS.POSITIVE, fontWeight: 'bold' }}>{price.toLocaleString()}원</span>,
+            sorter: (a: any, b: any) => a.totalSales - b.totalSales,
+        },
+    ];
+
+    const menuColumns = [
+        {
+            title: '카테고리',
             dataIndex: 'name',
             key: 'name',
             render: (text: string) => <span style={{ fontWeight: 'bold' }}>{text}</span>,
@@ -92,12 +155,21 @@ const SalesPage: React.FC = () => {
             render: (count: number) => `${count}건`,
         },
         {
-            title: '총 매출',
-            dataIndex: 'totalSales',
-            key: 'totalSales',
+            title: '매출 기여도',
+            dataIndex: 'value',
+            key: 'value',
             align: 'right' as const,
-            render: (price: number) => <span style={{ color: COLORS.STATS.POSITIVE, fontWeight: 'bold' }}>{price.toLocaleString()}원</span>,
-            sorter: (a: any, b: any) => a.totalSales - b.totalSales,
+            render: (value: number) => {
+                const total = data?.menuStats.reduce((acc, curr) => acc + curr.value, 0) || 1; // Sum of category stats
+                const percent = ((value / total) * 100).toFixed(1);
+                return (
+                    <span>
+                        <span style={{ marginRight: 8 }}>{percent}%</span>
+                        <span style={{ color: COLORS.STATS.POSITIVE, fontWeight: 'bold' }}>{value.toLocaleString()}원</span>
+                    </span>
+                );
+            },
+            sorter: (a: any, b: any) => a.value - b.value,
         },
     ];
 
@@ -107,76 +179,84 @@ const SalesPage: React.FC = () => {
             label: '일간 리포트',
             children: (
                 <>
-                    {/* Dashboard Stats */}
-                    <Row gutter={16} style={{ marginBottom: 24 }}>
-                        <Col span={6}>
-                            <Card>
+                    {/* Section 1: Service Revenue (시술 실적) */}
+                    <Card title="오늘의 시술 실적 (Revenue)" variant="borderless" style={{ marginBottom: 24 }}>
+                        <Row gutter={16}>
+                            <Col span={6}>
                                 <Statistic
-                                    title="총 매출"
-                                    value={data?.stats.totalSales || 0}
+                                    title="총 시술 매출"
+                                    value={data?.revenue?.total || 0}
                                     precision={0}
                                     suffix="원"
-                                    valueStyle={{ color: COLORS.STATS.POSITIVE, fontWeight: 'bold' }}
+                                    valueStyle={{ color: COLORS.PRIMARY, fontWeight: 'bold' }}
                                 />
-                            </Card>
-                        </Col>
-                        <Col span={6}>
-                            <Card>
-                                <Statistic
-                                    title="카드/계좌"
-                                    value={data?.stats.cardSales || 0}
-                                    precision={0}
-                                    suffix="원"
-                                    valueStyle={{ color: COLORS.PRIMARY }}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={6}>
-                            <Card>
-                                <Statistic
-                                    title="현금"
-                                    value={data?.stats.cashSales || 0}
-                                    precision={0}
-                                    suffix="원"
-                                    valueStyle={{ color: COLORS.WARNING }}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={6}>
-                            <Card>
-                                <Statistic
-                                    title="총 결제 건수"
-                                    value={data?.stats.count || 0}
-                                    precision={0}
-                                    suffix="건"
-                                />
-                            </Card>
-                        </Col>
-                    </Row>
+                                <div style={{ color: '#888', fontSize: '12px', marginTop: 4 }}>
+                                    * 디자이너 인센티브 산정 기준
+                                </div>
+                            </Col>
+                            <Col span={6}>
+                                <Statistic title="카드 매출" value={data?.revenue?.breakdown?.card || 0} suffix="원" />
+                            </Col>
+                            <Col span={6}>
+                                <Statistic title="현금 매출" value={data?.revenue?.breakdown?.cash || 0} suffix="원" />
+                            </Col>
+                            <Col span={6}>
+                                <Statistic title="선불권 사용 (차감)" value={data?.revenue?.breakdown?.prepaid || 0} suffix="원" valueStyle={{ color: '#faad14' }} />
+                            </Col>
+                        </Row>
+                    </Card>
 
-                    {/* Transaction Table */}
+                    {/* Section 2: Cash Flow (입금 현황) */}
+                    <Card title="실제 입금 현황 (Cash Flow)" variant="borderless" style={{ marginBottom: 24 }}>
+                        <Table
+                            dataSource={[
+                                { key: '1', type: '현장 카드 결제', amount: data?.cashFlow?.breakdown?.site_card || 0 },
+                                { key: '2', type: '현장 현금 결제', amount: data?.cashFlow?.breakdown?.site_cash || 0 },
+                                { key: '3', type: '선불권 충전 (카드)', amount: data?.cashFlow?.breakdown?.prepaid_charge_card || 0 },
+                                { key: '4', type: '선불권 충전 (현금)', amount: data?.cashFlow?.breakdown?.prepaid_charge_cash || 0 },
+                            ]}
+                            columns={[
+                                { title: '구분', dataIndex: 'type', key: 'type' },
+                                {
+                                    title: '금액',
+                                    dataIndex: 'amount',
+                                    key: 'amount',
+                                    align: 'right',
+                                    render: (val: number) => `${val.toLocaleString()}원`
+                                }
+                            ]}
+                            pagination={false}
+                            summary={(pageData) => {
+                                let total = 0;
+                                pageData.forEach(({ amount }) => { total += amount; });
+                                return (
+                                    <>
+                                        <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 'bold' }}>
+                                            <Table.Summary.Cell index={0}>실제 입금액 합계 (포스기 마감)</Table.Summary.Cell>
+                                            <Table.Summary.Cell index={1} align="right">
+                                                <span style={{ color: COLORS.STATS.POSITIVE }}>{total.toLocaleString()}원</span>
+                                            </Table.Summary.Cell>
+                                        </Table.Summary.Row>
+                                        <Table.Summary.Row>
+                                            <Table.Summary.Cell index={0} colSpan={2} style={{ color: '#888', fontSize: '12px', textAlign: 'right' }}>
+                                                ※ 선불권 사용액({(data?.revenue?.breakdown?.prepaid || 0).toLocaleString()}원)은 이미 선수금으로 입금된 금액이므로 합계에서 제외됩니다.
+                                            </Table.Summary.Cell>
+                                        </Table.Summary.Row>
+                                    </>
+                                );
+                            }}
+                        />
+                    </Card>
+
+                    {/* Transaction Detail Table */}
                     <Table
                         columns={transactionColumns}
                         dataSource={data?.reservations || []}
                         rowKey="id"
                         loading={loading}
-                        pagination={{ pageSize: 10 }}
+                        pagination={{ pageSize: 20 }}
                         bordered
                         title={() => `상세 내역 (${date.format('YYYY-MM-DD')})`}
-                        summary={(pageData) => {
-                            let total = 0;
-                            pageData.forEach(({ totalPrice }) => {
-                                total += totalPrice;
-                            });
-                            return (
-                                <Table.Summary.Row style={{ background: COLORS.BACKGROUND.LIGHT, fontWeight: 'bold' }}>
-                                    <Table.Summary.Cell index={0} colSpan={5} align="right">합계</Table.Summary.Cell>
-                                    <Table.Summary.Cell index={1} align="right">
-                                        <span style={{ color: COLORS.STATS.NEGATIVE }}>{total.toLocaleString()}원</span>
-                                    </Table.Summary.Cell>
-                                </Table.Summary.Row>
-                            );
-                        }}
                     />
                 </>
             ),
@@ -186,29 +266,60 @@ const SalesPage: React.FC = () => {
             label: '디자이너별 매출',
             children: (
                 <Table
-                    columns={statsColumns}
+                    columns={designerColumns}
                     dataSource={data?.designerStats || []}
                     rowKey="name"
                     loading={loading}
                     pagination={false}
                     bordered
-                    title={() => `디자이너별 실적 (${date.format('YYYY-MM-DD')})`}
+                    title={() => `디자이너별 실적 분석`}
                 />
             ),
         },
         {
             key: '3',
-            label: '시술별 매출',
+            label: '시술 카테고리 분석',
             children: (
-                <Table
-                    columns={statsColumns}
-                    dataSource={data?.menuStats || []}
-                    rowKey="name"
-                    loading={loading}
-                    pagination={false}
-                    bordered
-                    title={() => `시술 메뉴별 실적 (${date.format('YYYY-MM-DD')})`}
-                />
+                <Row gutter={24}>
+                    <Col xs={24} md={12}>
+                        <Card title="카테고리별 매출 비중" variant="borderless">
+                            <div ref={onResizeRef} style={{ width: '100%', height: 300, minWidth: 300 }}>
+                                {chartWidth > 0 && (
+                                    <PieChart width={chartWidth} height={300}>
+                                        <Pie
+                                            data={(data?.menuStats || []) as any}
+                                            dataKey="value" // 'value' from backend mapping (re-mapped to value: totalSales)
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={80}
+                                            isAnimationActive={false}
+                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                        >
+                                            {/* @ts-ignore */}
+                                            {data?.menuStats.map((_, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS.CHARTS[index % COLORS.CHARTS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value: number) => `${value.toLocaleString()}원`} />
+                                        <Legend />
+                                    </PieChart>
+                                )}
+                            </div>
+                        </Card>
+                    </Col>
+                    <Col xs={24} md={12}>
+                        <Table
+                            columns={menuColumns}
+                            dataSource={data?.menuStats || []}
+                            rowKey="name"
+                            loading={loading}
+                            pagination={false}
+                            bordered
+                            title={() => `상세 데이터`}
+                        />
+                    </Col>
+                </Row>
             ),
         },
     ];
@@ -247,7 +358,7 @@ const SalesPage: React.FC = () => {
                     </div>
                 </div>
 
-                <Tabs defaultActiveKey="1" items={items} />
+                <Tabs activeKey={activeTab} onChange={setActiveTab} items={items} destroyOnHidden />
             </div>
         </Content>
     );

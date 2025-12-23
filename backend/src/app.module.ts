@@ -12,8 +12,9 @@ import { SalesModule } from './sales/sales.module';
 import { AuthModule } from './auth/auth.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { VisitLogsModule } from './visit-logs/visit-logs.module';
+import { PrepaidModule } from './prepaid/prepaid.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
+
 import { UPLOAD_ROOT } from './config/upload.config';
 
 import { TimeModule } from './common/time/time.module';
@@ -36,6 +37,7 @@ import { TimeModule } from './common/time/time.module';
         AuthModule,
         UploadsModule,
         VisitLogsModule,
+        PrepaidModule,
         ServeStaticModule.forRoot({
             rootPath: UPLOAD_ROOT,
             serveRoot: '/uploads',

@@ -43,6 +43,7 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     const [designers, setDesigners] = useState<any[]>([]);
     const [menus, setMenus] = useState<any[]>([]);
     const [shop, setShop] = useState<any>(null);
+    const [dropdownLoading, setDropdownLoading] = useState(false);
 
     // Fetch details
     useEffect(() => {
@@ -80,6 +81,7 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     useEffect(() => {
         if (mode === 'edit' && shopId) {
             const fetchData = async () => {
+                setDropdownLoading(true);
                 try {
                     const [dData, mData, sData] = await Promise.all([
                         getDesigners(shopId),
@@ -91,6 +93,8 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                     setShop(sData);
                 } catch (e) {
                     console.error(e);
+                } finally {
+                    setDropdownLoading(false);
                 }
             };
             fetchData();
@@ -103,8 +107,8 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
             form.setFieldsValue({
                 date: dayjs(reservation.start_time),
                 time: dayjs(reservation.start_time),
-                designerId: reservation.designer_id,
-                treatmentId: reservation.RESERVATION_ITEMS?.[0]?.menu_id,
+                designerId: Number(reservation.designer_id), // Force Number
+                treatmentId: Number(reservation.RESERVATION_ITEMS?.[0]?.menu_id), // Force Number
                 price: reservation.RESERVATION_ITEMS?.[0]?.price,
                 status: reservation.status,
                 alarm: reservation.alarm_enabled,
@@ -117,7 +121,7 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
         setIsPaymentOpen(true);
     };
 
-    const handlePaymentConfirm = async (paymentData: { totalPrice: number; paymentType: string; paymentMemo: string }) => {
+    const handlePaymentConfirm = async (paymentData: { totalPrice: number; payments: { paymentType: string; amount: number }[]; paymentMemo: string }) => {
         if (!reservationId || !shopId) return;
         setIsCompleting(true);
         try {
@@ -361,14 +365,18 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                         />
                     </Form.Item>
                     <Form.Item label="담당 디자이너" name="designerId" rules={[{ required: true }]}>
-                        <Select options={designers.map(d => ({ label: d.USERS.name, value: d.designer_id }))} />
+                        <Select
+                            loading={dropdownLoading}
+                            options={designers.map(d => ({ label: d.USERS.name, value: Number(d.designer_id) }))}
+                        />
                     </Form.Item>
                     <Flex gap="small">
                         <Form.Item label="시술 메뉴" name="treatmentId" rules={[{ required: true }]} style={{ flex: 1 }}>
                             <Select
+                                loading={dropdownLoading}
                                 options={menus
                                     .filter(m => m.type !== 'CATEGORY')
-                                    .map(m => ({ label: `${m.name}`, value: m.menu_id }))}
+                                    .map(m => ({ label: `${m.name}`, value: Number(m.menu_id) }))}
                                 onChange={(value) => {
                                     // 메뉴 변경 시 기본 가격 세팅
                                     const selectedMenu = menus.find(m => m.menu_id === value);
@@ -387,7 +395,10 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                         </Form.Item>
                     </Flex>
                     <Form.Item label="예약 상태" name="status" rules={[{ required: true }]}>
-                        <Select options={Object.keys(RESERVATION_STATUS_COLORS).map(status => ({ label: status, value: status }))} />
+                        <Select options={Object.keys(RESERVATION_STATUS_COLORS).map(status => ({
+                            label: STRINGS.SCHEDULE[`STATUSED_${status}` as keyof typeof STRINGS.SCHEDULE] || status,
+                            value: status
+                        }))} />
                     </Form.Item>
                     <Flex gap="small" align='center' style={{ marginBottom: 24 }}>
                         <span>알림 발송</span>
@@ -411,6 +422,8 @@ const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                 onConfirm={handlePaymentConfirm}
                 initialPrice={reservation.RESERVATION_ITEMS?.reduce((acc, item) => acc + item.price, 0) || 0}
                 loading={isCompleting}
+                shopId={shopId || 0}
+                customerId={reservation.customer_id}
             />
         </Modal>
     );

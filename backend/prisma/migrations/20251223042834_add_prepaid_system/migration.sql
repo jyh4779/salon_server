@@ -1,0 +1,63 @@
+-- AlterTable
+ALTER TABLE `PAYMENTS` MODIFY `type` ENUM('APP_DEPOSIT', 'SITE_CARD', 'SITE_CASH', 'PREPAID') NOT NULL;
+
+-- CreateTable
+CREATE TABLE `PREPAID_TICKETS` (
+    `ticket_id` BIGINT NOT NULL AUTO_INCREMENT,
+    `shop_id` BIGINT NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `price` INTEGER NOT NULL,
+    `credit_amount` INTEGER NOT NULL,
+    `validity_days` INTEGER NULL,
+    `is_active` BOOLEAN NULL DEFAULT true,
+    `created_at` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
+
+    INDEX `PREPAID_TICKETS_shop_id_fkey`(`shop_id`),
+    PRIMARY KEY (`ticket_id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `CUSTOMER_PREPAID_BALANCES` (
+    `balance_id` BIGINT NOT NULL AUTO_INCREMENT,
+    `user_id` BIGINT NOT NULL,
+    `shop_id` BIGINT NOT NULL,
+    `balance` INTEGER NOT NULL DEFAULT 0,
+    `last_used_at` DATETIME(0) NULL,
+    `created_at` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
+
+    INDEX `CUSTOMER_PREPAID_BALANCES_user_id_fkey`(`user_id`),
+    INDEX `CUSTOMER_PREPAID_BALANCES_shop_id_fkey`(`shop_id`),
+    UNIQUE INDEX `user_shop_unique`(`user_id`, `shop_id`),
+    PRIMARY KEY (`balance_id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `PREPAID_TRANSACTIONS` (
+    `transaction_id` BIGINT NOT NULL AUTO_INCREMENT,
+    `balance_id` BIGINT NOT NULL,
+    `type` ENUM('CHARGE', 'USE', 'REFUND', 'EXPIRE', 'ADJUST') NOT NULL,
+    `amount` INTEGER NOT NULL,
+    `bonus_amount` INTEGER NULL DEFAULT 0,
+    `balance_after` INTEGER NOT NULL,
+    `ref_payment_id` BIGINT NULL,
+    `created_at` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
+
+    INDEX `PREPAID_TRANSACTIONS_balance_id_fkey`(`balance_id`),
+    INDEX `PREPAID_TRANSACTIONS_ref_payment_id_fkey`(`ref_payment_id`),
+    PRIMARY KEY (`transaction_id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `PREPAID_TICKETS` ADD CONSTRAINT `PREPAID_TICKETS_shop_id_fkey` FOREIGN KEY (`shop_id`) REFERENCES `SHOPS`(`shop_id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `CUSTOMER_PREPAID_BALANCES` ADD CONSTRAINT `CUSTOMER_PREPAID_BALANCES_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `USERS`(`user_id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `CUSTOMER_PREPAID_BALANCES` ADD CONSTRAINT `CUSTOMER_PREPAID_BALANCES_shop_id_fkey` FOREIGN KEY (`shop_id`) REFERENCES `SHOPS`(`shop_id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `PREPAID_TRANSACTIONS` ADD CONSTRAINT `PREPAID_TRANSACTIONS_balance_id_fkey` FOREIGN KEY (`balance_id`) REFERENCES `CUSTOMER_PREPAID_BALANCES`(`balance_id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `PREPAID_TRANSACTIONS` ADD CONSTRAINT `PREPAID_TRANSACTIONS_ref_payment_id_fkey` FOREIGN KEY (`ref_payment_id`) REFERENCES `PAYMENTS`(`payment_id`) ON DELETE SET NULL ON UPDATE RESTRICT;

@@ -4,6 +4,7 @@ import ShopSettings from './components/ShopSettings';
 import DesignerSettings from './components/DesignerSettings';
 import MenuSettings from './components/MenuSettings';
 import CategorySettings from './components/CategorySettings';
+import PrepaidSettings from './components/PrepaidSettings';
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -33,6 +34,11 @@ const SettingsPage: React.FC = () => {
             key: '4',
             label: '시술 메뉴',
             children: <MenuSettings />,
+        },
+        {
+            key: '5',
+            label: '선불권 관리',
+            children: <PrepaidSettings />,
         },
     ];
 

@@ -10,15 +10,15 @@ erDiagram
     %% ==========================================
     USERS {
         bigint user_id PK "내부 관리용 PK"
-        string firebase_uid UK "Firebase UID (NULL 허용: 오프라인 손님)"
+        string firebase_uid UK "Firebase UID (NULL 허용: 추후 모바일 앱 고객용)"
         string phone UK "휴대폰번호 (★식별키, NOT NULL)"
-        string email UK "이메일 (NULL 허용: 소셜/오프라인)"
-        string password "NULL 허용 (Firebase 관리)"
+        string email UK "이메일 (관리자 로그인 / 모바일 앱)"
+        string password "관리자 로그인 비밀번호 (Hash)"
         string name "이름"
         enum role "CUSTOMER, DESIGNER, OWNER, ADMIN" 
         enum gender "MALE, FEMALE" 
         string birthdate "YYYYMMDD"
-        boolean is_app_user "앱 가입 여부 (TRUE/FALSE)"
+        boolean is_app_user "앱 가입 여부 (추후 모바일 앱)"
         enum grade "NEW, VIP, CAUTION"
         datetime created_at
     }
