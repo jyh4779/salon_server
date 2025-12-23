@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Layout, Typography, Card, Table, DatePicker, Row, Col, Statistic, message, Tabs, Button, Tag } from 'antd';
-import { LeftOutlined, RightOutlined, UserOutlined, MehOutlined } from '@ant-design/icons';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
@@ -279,8 +279,10 @@ const SalesPage: React.FC = () => {
                                             </Table.Summary.Cell>
                                         </Table.Summary.Row>
                                         <Table.Summary.Row>
-                                            <Table.Summary.Cell index={0} colSpan={2} style={{ color: '#888', fontSize: '12px', textAlign: 'right' }}>
-                                                ※ 선불권 사용액({(data?.revenue?.breakdown?.prepaid || 0).toLocaleString()}원)은 이미 선수금으로 입금된 금액이므로 합계에서 제외됩니다.
+                                            <Table.Summary.Cell index={0} colSpan={2}>
+                                                <div style={{ color: '#888', fontSize: '12px', textAlign: 'right' }}>
+                                                    ※ 선불권 사용액({(data?.revenue?.breakdown?.prepaid || 0).toLocaleString()}원)은 이미 선수금으로 입금된 금액이므로 합계에서 제외됩니다.
+                                                </div>
                                             </Table.Summary.Cell>
                                         </Table.Summary.Row>
                                     </>

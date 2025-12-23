@@ -27,7 +27,7 @@ export const updateReservation = async (shopId: number, id: string, data: Partia
 
 export interface CompleteReservationData {
     totalPrice: number;
-    paymentType: string;
+    payments: { paymentType: string; amount: number }[];
     paymentMemo?: string;
 }
 

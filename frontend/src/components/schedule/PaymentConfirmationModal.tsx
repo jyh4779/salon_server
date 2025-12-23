@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, InputNumber, Select, Input, Button, Flex, Spin, Typography, message, List, Divider } from 'antd';
+import { Modal, Form, InputNumber, Select, Input, Button, Flex, Typography, message, List } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { STRINGS } from '../../constants/strings';
 import { getCustomerPrepaidBalance } from '../../api/prepaid';
@@ -37,7 +37,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
 }) => {
     const [form] = Form.useForm();
     const [prepaidBalance, setPrepaidBalance] = useState<number | null>(null);
-    const [checkingBalance, setCheckingBalance] = useState(false);
+
 
     // Split Payment State
     const [payments, setPayments] = useState<PaymentMethod[]>([]);
@@ -64,7 +64,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
     }, [isOpen, initialPrice, form, shopId, customerId]);
 
     const fetchBalance = async () => {
-        setCheckingBalance(true);
+        // setCheckingBalance(true);
         try {
             const data = await getCustomerPrepaidBalance(shopId, customerId);
             setPrepaidBalance(data.balance);
@@ -72,7 +72,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
             console.error(e);
             // message.error('선불권 잔액을 불러오지 못했습니다.'); // Silent fail ok?
         } finally {
-            setCheckingBalance(false);
+            // setCheckingBalance(false);
         }
     };
 
@@ -197,7 +197,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
                         formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                         parser={(displayValue) => displayValue?.replace(/\$\s?|(,*)/g, '') as unknown as number}
                         suffix="원"
-                        onChange={(val) => {
+                        onChange={() => {
                             // Reset logic if total changes?
                             // Keep simple for now
                         }}
