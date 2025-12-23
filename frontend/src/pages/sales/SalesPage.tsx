@@ -61,6 +61,29 @@ const SalesPage: React.FC = () => {
         }
     };
 
+    // Transform data for row spanning
+    const expandedDatas = React.useMemo(() => {
+        if (!data?.reservations) return [];
+        const result: any[] = [];
+
+        data.reservations.forEach((reservation) => {
+            const payments = reservation.payments && reservation.payments.length > 0
+                ? reservation.payments
+                : [{ type: '', amount: 0 }]; // Placeholder for no payment
+
+            payments.forEach((payment, index) => {
+                result.push({
+                    ...reservation,
+                    key: `${reservation.id}-${index}`, // Unique key
+                    rowSpan: index === 0 ? payments.length : 0,
+                    paymentDetail: payment,
+                });
+            });
+        });
+
+        return result;
+    }, [data]);
+
     const transactionColumns = [
         {
             title: '시간',
@@ -68,6 +91,7 @@ const SalesPage: React.FC = () => {
             key: 'time',
             render: (time: string) => dayjs(time).format('HH:mm'),
             sorter: (a: SalesTransaction, b: SalesTransaction) => new Date(a.time).getTime() - new Date(b.time).getTime(),
+            onCell: (record: any) => ({ rowSpan: record.rowSpan }),
         },
         {
             title: '상태',
@@ -77,34 +101,51 @@ const SalesPage: React.FC = () => {
                 if (status === 'NOSHOW') return <Tag color="error">노쇼</Tag>;
                 if (status === 'CANCELED') return <Tag color="default">취소</Tag>;
                 return <Tag color="success">완료</Tag>;
-            }
+            },
+            onCell: (record: any) => ({ rowSpan: record.rowSpan }),
         },
         {
             title: '고객명',
             dataIndex: 'customer',
             key: 'customer',
             render: (text: string, record: SalesTransaction) => (
-                <a onClick={() => navigate(`/client/${record.customerId}`)} style={{ fontWeight: 'bold' }}>
+                <a onClick={() => navigate(`/shops/${shopId}/client/${record.customerId}`)} style={{ fontWeight: 'bold' }}>
                     {text}
                 </a>
             ),
+            onCell: (record: any) => ({ rowSpan: record.rowSpan }),
         },
         {
             title: '시술 내역',
             dataIndex: 'menus',
             key: 'menus',
+            onCell: (record: any) => ({ rowSpan: record.rowSpan }),
         },
         {
             title: '담당 디자이너',
             dataIndex: 'designer',
             key: 'designer',
+            onCell: (record: any) => ({ rowSpan: record.rowSpan }),
+        },
+        {
+            title: '결제 수단',
+            dataIndex: 'paymentDetail',
+            key: 'paymentDetail',
+            render: (payment: any) => {
+                const type = payment.type;
+                if (!type) return <Tag>미결제</Tag>;
+                if (type === 'SITE_CARD') return <Tag color="blue">💳 카드</Tag>;
+                if (type === 'SITE_CASH') return <Tag color="green">💵 현금</Tag>;
+                if (type === 'PREPAID') return <Tag color="gold">🅿️ 선불권</Tag>;
+                if (type === 'APP_DEPOSIT') return <Tag color="purple">📱 앱결제</Tag>;
+                return <Tag>{type}</Tag>;
+            }
         },
         {
             title: '결제 금액',
-            dataIndex: 'totalPrice',
-            key: 'totalPrice',
-            render: (price: number) => `${price.toLocaleString()}원`,
-            sorter: (a: SalesTransaction, b: SalesTransaction) => a.totalPrice - b.totalPrice,
+            dataIndex: 'paymentDetail', // Use paymentDetail to get specific amount
+            key: 'amount', // Changed key to generic amount
+            render: (payment: any) => `${payment.amount.toLocaleString()}원`,
             align: 'right' as const,
         },
     ];
@@ -251,10 +292,10 @@ const SalesPage: React.FC = () => {
                     {/* Transaction Detail Table */}
                     <Table
                         columns={transactionColumns}
-                        dataSource={data?.reservations || []}
-                        rowKey="id"
+                        dataSource={expandedDatas}
+                        rowKey="key" // Used unique key from transformation
                         loading={loading}
-                        pagination={{ pageSize: 20 }}
+                        pagination={{ pageSize: 20 }} // Pagination might behave fully on rows, which isn't ideal for "reservation count", but acceptable for now.
                         bordered
                         title={() => `상세 내역 (${date.format('YYYY-MM-DD')})`}
                     />

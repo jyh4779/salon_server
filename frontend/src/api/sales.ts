@@ -13,6 +13,11 @@ export interface DailySalesStats {
     avgTicket: number;
 }
 
+export interface PaymentInfo {
+    type: string;
+    amount: number;
+}
+
 export interface SalesTransaction {
     id: number;
     time: string;
@@ -22,6 +27,7 @@ export interface SalesTransaction {
     menus: string;
     totalPrice: number;
     paymentType: string;
+    payments: PaymentInfo[]; // Added detailed payments
     status: string; // Added status
 }
 
@@ -39,9 +45,30 @@ export interface MenuSalesStats {
     count: number;
 }
 
+export interface RevenueData {
+    total: number;
+    breakdown: {
+        card: number;
+        cash: number;
+        prepaid: number;
+    };
+}
+
+export interface CashFlowData {
+    total: number;
+    breakdown: {
+        site_card: number;
+        site_cash: number;
+        prepaid_charge_card: number;
+        prepaid_charge_cash: number;
+    };
+}
+
 export interface DailySalesData {
     date: string;
     stats: DailySalesStats;
+    revenue?: RevenueData;
+    cashFlow?: CashFlowData;
     designerStats: DesignerSalesStats[];
     menuStats: MenuSalesStats[]; // Used for Category Chart
     reservations: SalesTransaction[];

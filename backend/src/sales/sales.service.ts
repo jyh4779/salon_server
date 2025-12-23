@@ -139,6 +139,7 @@ export class SalesService {
                     menus: r.RESERVATION_ITEMS?.map((i: any) => i.menu_name).join(', ') || '',
                     totalPrice: reservationTotal,
                     paymentType: payments.map((p: any) => p.type).join(', '),
+                    payments: payments.map((p: any) => ({ type: p.type, amount: p.amount })),
                 };
             });
 

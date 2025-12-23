@@ -29,8 +29,6 @@ const PrepaidSettings: React.FC = () => {
 
     const handleCreate = () => {
         setIsModalOpen(true);
-        form.resetFields();
-        form.setFieldValue('validity_days', 365); // Default 1 year
     };
 
     const handleModalOk = async () => {
@@ -124,7 +122,7 @@ const PrepaidSettings: React.FC = () => {
                 okText="등록"
                 cancelText="취소"
             >
-                <Form form={form} layout="vertical">
+                <Form form={form} layout="vertical" initialValues={{ validity_days: 365 }}>
                     <Form.Item label="상품명" name="name" rules={[{ required: true, message: '상품명을 입력해주세요' }]}>
                         <Input placeholder="예: 30만원 멤버십 (10% 추가 적립)" />
                     </Form.Item>
