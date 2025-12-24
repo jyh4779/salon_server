@@ -14,7 +14,10 @@ export class AuthService {
     async validateUser(email: string, pass: string): Promise<any> {
         const user = await this.usersService.findByEmail(email);
         if (user && user.password && (await bcrypt.compare(pass, user.password))) {
-            // Check for ADMIN or OWNER role
+            // Check for authentication vs authorization:
+            // validateUser is usually for Login.
+            // Role check here might block generic login, but that's intended? 
+            // The existing code restricts Login to ADMIN/OWNER. Correct.
             if (user.role !== USERS_role.ADMIN && user.role !== USERS_role.OWNER) {
                 return null;
             }
@@ -22,6 +25,14 @@ export class AuthService {
             return result;
         }
         return null;
+    }
+
+    async validatePassword(userId: number, pass: string): Promise<boolean> {
+        const user = await this.usersService.findById(userId);
+        if (user && user.password && (await bcrypt.compare(pass, user.password))) {
+            return true;
+        }
+        return false;
     }
 
     async login(user: any) {

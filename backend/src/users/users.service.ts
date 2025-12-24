@@ -77,6 +77,12 @@ export class UsersService {
         });
     }
 
+    async findById(userId: number): Promise<USERS | undefined> {
+        return this.prisma.uSERS.findUnique({
+            where: { user_id: BigInt(userId) },
+        });
+    }
+
     async setCurrentRefreshToken(refreshToken: string, userId: number) {
         const currentHashedRefreshToken = await bcrypt.hash(refreshToken, 10);
         await this.prisma.uSERS.update({

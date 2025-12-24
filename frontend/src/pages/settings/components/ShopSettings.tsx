@@ -51,9 +51,8 @@ const ShopSettings: React.FC = () => {
                 address: values.address,
                 open_time: values.open_time ? values.open_time.format('HH:mm') : undefined,
                 close_time: values.close_time ? values.close_time.format('HH:mm') : undefined,
-                closed_days: values.closed_days ? values.closed_days.join(',') : '',
+                closed_days: Array.isArray(values.closed_days) ? values.closed_days.join(',') : (values.closed_days || ''),
             };
-            console.log('[Frontend] Saving shop settings:', payload);
             await updateShop(1, payload);
             message.success('매장 정보가 저장되었습니다.');
             fetchShop(); // Refresh

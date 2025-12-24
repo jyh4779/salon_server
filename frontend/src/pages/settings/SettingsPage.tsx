@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, Typography, Layout, theme } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import PasswordConfirmModal from '../../components/common/PasswordConfirmModal';
 import ShopSettings from './components/ShopSettings';
 import DesignerSettings from './components/DesignerSettings';
 import MenuSettings from './components/MenuSettings';
@@ -13,6 +15,21 @@ const SettingsPage: React.FC = () => {
     const {
         token: { colorBgContainer, borderRadiusLG },
     } = theme.useToken();
+    const navigate = useNavigate();
+
+    // Authentication State
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isModalVisible, setIsModalVisible] = useState(true);
+
+    const handleConfirm = () => {
+        setIsAuthorized(true);
+        setIsModalVisible(false);
+    };
+
+    const handleCancel = () => {
+        // Redirect to home or previous page if cancelled
+        navigate('/');
+    };
 
     const items = [
         {
@@ -52,9 +69,25 @@ const SettingsPage: React.FC = () => {
                     borderRadius: borderRadiusLG,
                 }}
             >
-                <Title level={4} style={{ marginBottom: 24 }}>설정</Title>
-                <Tabs defaultActiveKey="1" items={items} />
+                {/* Always rendered but hidden content or conditional rendering? 
+                    Conditional is safer. */}
+                {isAuthorized ? (
+                    <>
+                        <Title level={4} style={{ marginBottom: 24 }}>설정</Title>
+                        <Tabs defaultActiveKey="1" items={items} />
+                    </>
+                ) : (
+                    <div style={{ padding: '40px', textAlign: 'center' }}>
+                        <Typography.Text type="secondary">설정 내용에 접근하려면 비밀번호 인증이 필요합니다.</Typography.Text>
+                    </div>
+                )}
             </div>
+
+            <PasswordConfirmModal
+                visible={isModalVisible}
+                onConfirm={handleConfirm}
+                onCancel={handleCancel}
+            />
         </Content>
     );
 };

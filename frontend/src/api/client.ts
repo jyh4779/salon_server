@@ -44,7 +44,9 @@ api.interceptors.request.use(
         }
         // DEBUG: Log Request
         if (process.env.NODE_ENV === 'development') {
-            console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, config.data);
+            const safeData = { ...config.data };
+            if (safeData.password) safeData.password = '********';
+            console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, safeData);
         }
         return config;
     },

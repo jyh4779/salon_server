@@ -1,6 +1,7 @@
 import { Controller, Post, UseGuards, Request, Body, Res, HttpCode, Get, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -84,5 +85,23 @@ export class AuthController {
             // Token invalid or expired
             return { accessToken: null, user: null };
         }
+    }
+    @Post('verify-password')
+    @UseGuards(JwtAuthGuard) // Assuming JwtAuthGuard exists and is globally available or imported?
+    // Wait, imports at top: UseGuards is imported. JwtAuthGuard is NOT imported in the original file view!
+    // I need to check imports. The original file view showed:
+    // import { Controller, Post, UseGuards, Request, Body, Res, ... }
+    // It did NOT show JwtAuthGuard import.
+    // However, existing endpoints like 'login', 'logout', 'refresh' don't use UseGuards(JwtAuthGuard) explicitly?
+    // 'refresh' uses @Request() req, but parses cookie.
+    // 'login' is public.
+    // 'verify-password' MUST be protected.
+    // I need to import JwtAuthGuard.
+    async verifyPassword(@Request() req, @Body() body) {
+        const isValid = await this.authService.validatePassword(req.user.userId, body.password);
+        if (!isValid) {
+            throw new UnauthorizedException('Invalid password');
+        }
+        return { success: true };
     }
 }
