@@ -223,7 +223,7 @@ const SalesPage: React.FC = () => {
                     {/* Section 1: Service Revenue (시술 실적) */}
                     <Card title="오늘의 시술 실적 (Revenue)" variant="borderless" style={{ marginBottom: 24 }}>
                         <Row gutter={16}>
-                            <Col span={6}>
+                            <Col span={4}>
                                 <Statistic
                                     title="총 시술 매출"
                                     value={data?.revenue?.total || 0}
@@ -235,13 +235,16 @@ const SalesPage: React.FC = () => {
                                     * 디자이너 인센티브 산정 기준
                                 </div>
                             </Col>
-                            <Col span={6}>
+                            <Col span={5}>
+                                <Statistic title="앱 결제" value={data?.revenue?.breakdown?.app || 0} suffix="원" valueStyle={{ color: '#722ed1' }} />
+                            </Col>
+                            <Col span={5}>
                                 <Statistic title="카드 매출" value={data?.revenue?.breakdown?.card || 0} suffix="원" />
                             </Col>
-                            <Col span={6}>
+                            <Col span={5}>
                                 <Statistic title="현금 매출" value={data?.revenue?.breakdown?.cash || 0} suffix="원" />
                             </Col>
-                            <Col span={6}>
+                            <Col span={5}>
                                 <Statistic title="선불권 사용 (차감)" value={data?.revenue?.breakdown?.prepaid || 0} suffix="원" valueStyle={{ color: '#faad14' }} />
                             </Col>
                         </Row>
@@ -289,10 +292,10 @@ const SalesPage: React.FC = () => {
                                 );
                             }}
                         />
-                    </Card>
+                    </Card >
 
                     {/* Transaction Detail Table */}
-                    <Table
+                    < Table
                         columns={transactionColumns}
                         dataSource={expandedDatas}
                         rowKey="key" // Used unique key from transformation

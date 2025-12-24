@@ -64,7 +64,7 @@ export class SalesService {
             // A. Service Revenue (Based on COMPLETED Reservations)
             let revenue = {
                 total: 0,
-                breakdown: { card: 0, cash: 0, prepaid: 0 }
+                breakdown: { card: 0, cash: 0, prepaid: 0, app: 0 }
             };
 
             // B. Cash Flow (Based on Actual Money In)
@@ -105,6 +105,7 @@ export class SalesService {
                         if (p.type === 'SITE_CARD') revenue.breakdown.card += p.amount;
                         else if (p.type === 'SITE_CASH') revenue.breakdown.cash += p.amount;
                         else if (p.type === 'PREPAID') revenue.breakdown.prepaid += p.amount;
+                        else if (p.type === 'APP_DEPOSIT') revenue.breakdown.app += p.amount;
                     });
 
                     // Stats
@@ -175,6 +176,7 @@ export class SalesService {
                     totalSales: revenue.total, // Align with revenue
                     cardSales: revenue.breakdown.card,
                     cashSales: revenue.breakdown.cash,
+                    appSales: revenue.breakdown.app,
                     depositSales: 0, // Deprecated or kept for structure
                     count: completedCount,
                     cancelCount,

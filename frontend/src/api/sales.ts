@@ -51,6 +51,7 @@ export interface RevenueData {
         card: number;
         cash: number;
         prepaid: number;
+        app: number;
     };
 }
 
