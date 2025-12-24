@@ -5,7 +5,9 @@ import { DesignerDTO, getDesigners, updateDesigner, createDesigner } from '../..
 import { formatPhoneNumber } from '../../../utils/format';
 import dayjs from 'dayjs';
 import ImageUpload from '../../../components/common/ImageUpload';
-import { API_BASE_URL } from '../../../constants/config';
+
+// Use environment variable or default to relative path for Nginx proxy
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const daysOptions = [
     { label: '월', value: 'Mon' },
