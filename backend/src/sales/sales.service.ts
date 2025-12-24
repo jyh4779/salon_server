@@ -194,4 +194,169 @@ export class SalesService {
             throw new InternalServerErrorException(`Failed to get sales data: ${error.message}`);
         }
     }
+
+    async getWeeklySales(shopId: number, date: string) {
+        try {
+            const today = this.timeService.parse(date);
+            // ISO week starts on Monday
+            const startOfWeek = today.startOf('isoWeek').startOf('day').toDate();
+            const endOfWeek = today.endOf('isoWeek').endOf('day').toDate();
+
+            const startOfLastWeek = today.subtract(1, 'week').startOf('isoWeek').startOf('day').toDate();
+            const endOfLastWeek = today.subtract(1, 'week').endOf('isoWeek').endOf('day').toDate();
+
+            // Fetch Reservations for both weeks
+            const reservations = await this.prisma.rESERVATIONS.findMany({
+                where: {
+                    start_time: { gte: startOfLastWeek, lte: endOfWeek },
+                    status: 'COMPLETED',
+                    shop_id: BigInt(shopId)
+                },
+                include: {
+                    USERS: true,
+                    DESIGNERS: { include: { USERS: true } },
+                    RESERVATION_ITEMS: {
+                        include: {
+                            MENUS: { include: { parent: true } }
+                        }
+                    },
+                    PAYMENTS: true
+                },
+                orderBy: { start_time: 'asc' }
+            });
+
+            // Helper to aggregate data
+            const aggregate = (start: Date, end: Date) => {
+                let totalSales = 0;
+                let count = 0;
+                let appSales = 0; // For verification if needed, or just total
+
+                // For Stats
+                const designerMap = new Map<string, { id: number, name: string, totalSales: number, count: number }>();
+                const categoryMap = new Map<string, { name: string, totalSales: number, count: number }>();
+                const customerMap = { new: 0, returning: 0 };
+                const dailySales = new Map<string, number>();
+
+                // Initialize daily sales map for the week range
+                let current = this.timeService.parse(start);
+                const endDate = this.timeService.parse(end);
+                while (current.isBefore(endDate) || current.isSame(endDate)) {
+                    dailySales.set(current.format('YYYY-MM-DD'), 0);
+                    current = current.add(1, 'day');
+                }
+
+                reservations.forEach(r => {
+                    const rTime = new Date(r.start_time);
+                    if (rTime >= start && rTime <= end) {
+                        const payments = r.PAYMENTS || [];
+                        const reservationTotal = payments.reduce((sum, p) => sum + p.amount, 0);
+
+                        totalSales += reservationTotal;
+                        count++;
+
+                        // Daily Trend
+                        const dayKey = this.timeService.format(rTime, 'YYYY-MM-DD');
+                        dailySales.set(dayKey, (dailySales.get(dayKey) || 0) + reservationTotal);
+
+                        // Designer Stats
+                        const dName = r.DESIGNERS?.USERS?.name || 'Unknown';
+                        const dId = Number(r.designer_id);
+                        const dStats = designerMap.get(dName) || { id: dId, name: dName, totalSales: 0, count: 0 };
+                        dStats.totalSales += reservationTotal;
+                        dStats.count++;
+                        designerMap.set(dName, dStats);
+
+                        // Category Stats
+                        (r.RESERVATION_ITEMS || []).forEach((item: any) => {
+                            let categoryName = item.MENUS?.parent?.name || item.MENUS?.category || '기타';
+                            const cStats = categoryMap.get(categoryName) || { name: categoryName, totalSales: 0, count: 0 };
+                            cStats.totalSales += item.price;
+                            cStats.count++;
+                            categoryMap.set(categoryName, cStats);
+                        });
+
+                        // Customer Stats
+                        if (r.USERS) {
+                            const userCreatedAt = new Date(r.USERS.created_at);
+                            if (userCreatedAt >= start && userCreatedAt <= end) {
+                                customerMap.new++;
+                            } else {
+                                customerMap.returning++;
+                            }
+                        }
+                    }
+                });
+
+                return {
+                    totalSales,
+                    count,
+                    avgTicket: count > 0 ? Math.round(totalSales / count) : 0,
+                    dailySales,
+                    designerMap,
+                    categoryMap,
+                    customerMap
+                };
+            };
+
+            const thisWeek = aggregate(startOfWeek, endOfWeek);
+            const lastWeek = aggregate(startOfLastWeek, endOfLastWeek);
+
+            // Calculate Growth (WoW)
+            const calcGrowth = (current: number, prev: number) => {
+                if (prev === 0) return current === 0 ? 0 : null; // null means 'New' (start from 0)
+                return Number((((current - prev) / prev) * 100).toFixed(1));
+            };
+
+            const summary = {
+                totalSales: thisWeek.totalSales,
+                totalSalesGrowth: calcGrowth(thisWeek.totalSales, lastWeek.totalSales),
+                count: thisWeek.count,
+                countGrowth: calcGrowth(thisWeek.count, lastWeek.count),
+                avgTicket: thisWeek.avgTicket,
+                avgTicketGrowth: calcGrowth(thisWeek.avgTicket, lastWeek.avgTicket),
+            };
+
+            // Format Trend
+            const days = ['월', '화', '수', '목', '금', '토', '일'];
+            const trend = Array.from(thisWeek.dailySales.entries()).map(([dateStr, sales], index) => ({
+                day: days[index], // Since we started isoWeek (Mon), order is correct? 
+                // Wait, map iteration order is insertion order in simple cases, but verify.
+                // We initialized map from Start Date (Mon) to End. So order is preserved.
+                // However, let's be safe.
+                dayName: this.timeService.parse(dateStr).format('ddd'), // Check locale
+                date: dateStr,
+                sales
+            }));
+
+            // Format Designer Stats
+            const designerStats = Array.from(thisWeek.designerMap.values())
+                .map(d => ({ ...d, avgTicket: d.count > 0 ? Math.round(d.totalSales / d.count) : 0 }))
+                .sort((a, b) => b.totalSales - a.totalSales);
+
+            // Format Category Stats
+            const categoryStats = Array.from(thisWeek.categoryMap.values())
+                .map(c => ({ name: c.name, value: c.totalSales, count: c.count }))
+                .sort((a, b) => b.value - a.value);
+
+            // Format Customer Stats
+            const customerStats = [
+                { name: '신규 고객', value: thisWeek.customerMap.new },
+                { name: '기존 고객', value: thisWeek.customerMap.returning }
+            ];
+
+            return {
+                startOfWeek: this.timeService.format(startOfWeek, 'YYYY-MM-DD'),
+                endOfWeek: this.timeService.format(endOfWeek, 'YYYY-MM-DD'),
+                summary,
+                trend: trend.map((t, i) => ({ day: days[i], sales: t.sales })), // Enforce Mon-Sun labels
+                designerStats,
+                categoryStats,
+                customerStats
+            };
+
+        } catch (error) {
+            console.error('getWeeklySales Error:', error);
+            throw new InternalServerErrorException(`Failed to get weekly sales: ${error.message}`);
+        }
+    }
 }

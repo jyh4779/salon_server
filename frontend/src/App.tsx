@@ -10,6 +10,7 @@ import SchedulePage from './pages/schedule/SchedulePage';
 import CustomerPage from './pages/customer/CustomerPage';
 import CustomerDetailPage from './pages/customer/CustomerDetailPage';
 import SalesPage from './pages/sales/SalesPage';
+import WeeklySalesPage from './pages/sales/WeeklySalesPage';
 import SettingsPage from './pages/settings/SettingsPage';
 
 const RequireAuth = ({ children }: { children: JSX.Element }) => {
@@ -63,7 +64,9 @@ function App() {
                         <Route path="schedule" element={<SchedulePage />} />
                         <Route path="client" element={<CustomerPage />} />
                         <Route path="client/:id" element={<CustomerDetailPage />} />
-                        <Route path="sales" element={<SalesPage />} />
+                        <Route path="sales/daily" element={<SalesPage />} />
+                        <Route path="sales" element={<Navigate to="sales/daily" replace />} />
+                        <Route path="sales/weekly" element={<WeeklySalesPage />} />
                         <Route path="settings" element={<SettingsPage />} />
                     </Route>
                     <Route path="*" element={<Navigate to="/" replace />} />

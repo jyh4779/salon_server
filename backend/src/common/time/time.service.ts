@@ -2,9 +2,11 @@ import { Injectable } from '@nestjs/common';
 import * as dayjs from 'dayjs';
 import * as utc from 'dayjs/plugin/utc';
 import * as timezone from 'dayjs/plugin/timezone';
+import * as isoWeek from 'dayjs/plugin/isoWeek';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(isoWeek);
 
 @Injectable()
 export class TimeService {

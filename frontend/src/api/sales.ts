@@ -81,3 +81,27 @@ export const getDailySales = async (shopId: number, date: string): Promise<Daily
     });
     return response.data;
 };
+
+export interface WeeklySalesData {
+    startOfWeek: string;
+    endOfWeek: string;
+    summary: {
+        totalSales: number;
+        totalSalesGrowth: number | null;
+        count: number;
+        countGrowth: number | null;
+        avgTicket: number;
+        avgTicketGrowth: number | null;
+    };
+    trend: { day: string; sales: number }[];
+    designerStats: DesignerSalesStats[];
+    categoryStats: MenuSalesStats[];
+    customerStats: { name: string; value: number }[];
+}
+
+export const getWeeklySales = async (shopId: number, date: string): Promise<WeeklySalesData> => {
+    const response = await api.get(`/shops/${shopId}/sales/weekly`, {
+        params: { date }
+    });
+    return response.data;
+};

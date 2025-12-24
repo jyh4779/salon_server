@@ -36,9 +36,13 @@ const MainLayout: React.FC = () => {
             label: STRINGS.MENU.CLIENT,
         },
         {
-            key: `/shops/${shopId}/sales`,
+            key: 'sales-submenu',
             icon: <DollarOutlined />,
             label: STRINGS.MENU.SALES,
+            children: [
+                { key: `/shops/${shopId}/sales/daily`, label: '일간 리포트' },
+                { key: `/shops/${shopId}/sales/weekly`, label: '주간 리포트' },
+            ]
         },
         {
             key: `/shops/${shopId}/settings`,
@@ -57,7 +61,24 @@ const MainLayout: React.FC = () => {
     };
 
     // Select the key that matches the current path
-    const selectedKey = menuItems.find(item => location.pathname.startsWith(item.key))?.key || `/shops/${shopId}/schedule`;
+    // Select the key that matches the current path.
+    // For nested routes (like customer detail), we need to ensure we highlight the parent.
+    // But for sales/daily and sales/weekly, they are distinct.
+    const selectedKey = React.useMemo(() => {
+        const flatItems = menuItems.flatMap(item => item.children ? item.children : [item]);
+
+        // Exact match first
+        const exactMatch = flatItems.find(item => location.pathname === item.key);
+        if (exactMatch) return exactMatch.key;
+
+        // Prefix match for detail pages (customer detail), but exclude sales overlap
+        // If current path is /sales/weekly, we don't want to match /sales/daily just because they share a prefix (they don't really share prefix in full key if daily is explicit)
+        // However, before we had /sales and /sales/weekly. Now we have /sales/daily and /sales/weekly.
+        // So /sales/daily shouldn't match /sales/weekly.
+
+        return flatItems.find(item => location.pathname.startsWith(item.key + '/'))?.key || `/shops/${shopId}/schedule`;
+    }, [location.pathname, menuItems]);
+
 
     return (
         <Layout style={{ height: '100vh' }}>
@@ -78,6 +99,7 @@ const MainLayout: React.FC = () => {
                 <Menu
                     theme="dark"
                     defaultSelectedKeys={[`/shops/${shopId}/schedule`]}
+                    defaultOpenKeys={['sales-submenu']}
                     selectedKeys={[selectedKey]}
                     mode="inline"
                     items={menuItems}

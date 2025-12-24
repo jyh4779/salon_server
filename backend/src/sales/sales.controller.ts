@@ -17,4 +17,13 @@ export class SalesController {
         const targetDate = date || new Date().toISOString().split('T')[0];
         return this.salesService.getDailySales(shopId, targetDate);
     }
+    @Get('weekly')
+    getWeeklySales(
+        @Param('shopId', ParseIntPipe) shopId: number,
+        @Query('date') date: string
+    ) {
+        // Default to today if no date provided
+        const targetDate = date || new Date().toISOString().split('T')[0];
+        return this.salesService.getWeeklySales(shopId, targetDate);
+    }
 }
