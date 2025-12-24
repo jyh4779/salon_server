@@ -19,6 +19,9 @@ import { UPLOAD_ROOT } from './config/upload.config';
 
 import { TimeModule } from './common/time/time.module';
 
+import { MobileAppModule } from './mobile-app/mobile-app.module';
+import { RouterModule } from '@nestjs/core';
+
 @Module({
     imports: [
         ConfigModule.forRoot({
@@ -38,6 +41,13 @@ import { TimeModule } from './common/time/time.module';
         UploadsModule,
         VisitLogsModule,
         PrepaidModule,
+        MobileAppModule,
+        RouterModule.register([
+            {
+                path: 'api/app',
+                module: MobileAppModule,
+            },
+        ]),
         ServeStaticModule.forRoot({
             rootPath: UPLOAD_ROOT,
             serveRoot: '/uploads',

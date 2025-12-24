@@ -10,5 +10,10 @@
         "dev:backend": "yarn workspace salon-manager-api start:dev",
         "build:frontend": "yarn workspace salon-manager-admin build",
         "build:backend": "yarn workspace salon-manager-api build"
+    },
+    "devDependencies": {
+        "pdf-lib": "^1.17.1",
+        "playwright": "^1.57.0",
+        "ts-node": "^10.9.2"
     }
 }

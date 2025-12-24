@@ -10,5 +10,6 @@ import { PrepaidModule } from '../prepaid/prepaid.module';
     imports: [PrepaidModule],
     controllers: [ReservationsController],
     providers: [ReservationsService, PrismaService, ReservationsRepository],
+    exports: [ReservationsService]
 })
 export class ReservationsModule { }

@@ -19,6 +19,123 @@ export class ReservationsService {
         private prepaidService: PrepaidService
     ) { }
 
+    async getAvailableSlots(shopId: number, date: string, duration: number, designerId?: number) {
+        // 1. Target Designers
+        let designers = [];
+        if (designerId && !isNaN(designerId)) {
+            const d = await this.prisma.dESIGNERS.findUnique({ where: { designer_id: BigInt(designerId) } });
+            if (d && d.is_active) designers.push(d);
+        } else {
+            // ANY or Not provided -> Fetch All Active
+            designers = await this.prisma.dESIGNERS.findMany({
+                where: { shop_id: BigInt(shopId), is_active: true }
+            });
+        }
+
+        const dateObj = this.timeService.parse(date); // Start of day 00:00 (KST probably)
+        const dayOfWeek = dateObj.format('ddd');
+
+        // Shop info for Closed Days
+        const shop = await this.prisma.sHOPS.findUnique({ where: { shop_id: BigInt(shopId) } });
+        if (!shop || (shop.closed_days && shop.closed_days.includes(dayOfWeek))) {
+            return []; // Shop closed
+        }
+
+        const allSlots = new Set<string>();
+
+        // 2. Loop Designers
+        for (const designer of designers) {
+            // Check Day Off
+            if (designer.day_off && designer.day_off.includes(dayOfWeek)) continue;
+
+            const workStartStr = this.timeService.toUtcTimeStr(designer.work_start as any); // HH:mm
+            const workEndStr = this.timeService.toUtcTimeStr(designer.work_end as any);   // HH:mm
+
+            if (!workStartStr || !workEndStr) continue;
+
+            // Define Search Range (Shop Open vs Designer Work - Intersection)
+            // But usually Designer Work is within Shop Open. Layout uses Designer Work.
+            let startT = this.timeService.parse(`${date} ${workStartStr}`);
+            let endT = this.timeService.parse(`${date} ${workEndStr}`);
+
+            // Generate Slots (e.g. 30 min interval)
+            // Implementation: Loop from workStart to workEnd - duration
+            let current = startT;
+            while (current.add(duration, 'minute').isSame(endT) || current.add(duration, 'minute').isBefore(endT)) {
+                const slotTimeStr = current.format('HH:mm');
+                const slotEndStr = current.add(duration, 'minute').format('HH:mm');
+
+                // Check Conflicts
+                // 1. Lunch
+                const lunchStart = this.timeService.toUtcTimeStr(designer.lunch_start as any);
+                const lunchEnd = this.timeService.toUtcTimeStr(designer.lunch_end as any);
+                let isLunch = false;
+                if (lunchStart && lunchEnd) {
+                    // Simple String Compare for HH:mm works
+                    // Overlap Check: Not (End <= LunchStart OR Start >= LunchEnd)
+                    if (!(slotEndStr <= lunchStart || slotTimeStr >= lunchEnd)) {
+                        isLunch = true;
+                    }
+                }
+
+                // 2. Reservations/Blocks (Need to fetch)
+                // Optimally, we fetch all reservations for this designer on this date ONCE outside loop or cached.
+                // For MVP, fetch here is okay (or fetch all for detailed check).
+                // Better: Fetch all res/blocks for this Date/Designer at loop start.
+
+                // Let's optimize: Fetch once per designer.
+
+                if (!isLunch) {
+                    // Check Reservations collision
+                    // Using validateAvailability or just raw check? 
+                    // validateAvailability throws Exception. We need boolean.
+                    // Let's implement lightweight check here or separate helper.
+                    // Re-use logic: "validateAvailability" is too heavy (DB calls).
+                    // We need "checkCollision(designerId, start, end)".
+                    const hasConflict = await this.checkCollision(Number(designer.designer_id), current, current.add(duration, 'minute'));
+                    if (!hasConflict) {
+                        allSlots.add(slotTimeStr);
+                    }
+                }
+
+                current = current.add(30, 'minute'); // Fixed Interval?? Or based on Duration?
+                // Usually defined by 'TimeGrid'. Let's assume 30min interval step.
+            }
+        }
+
+        // Sort results
+        return Array.from(allSlots).sort();
+    }
+
+    // Lightweight collision check without Exceptions
+    private async checkCollision(designerId: number, start: any, end: any): Promise<boolean> {
+        // Blocks
+        const block = await this.prisma.sCHEDULE_BLOCKS.findFirst({
+            where: {
+                designer_id: BigInt(designerId),
+                OR: [
+                    { start_time: { lt: end.toDate() }, end_time: { gt: start.toDate() } }
+                ]
+            }
+        });
+        if (block) return true;
+
+        // Reservations
+        const res = await this.prisma.rESERVATIONS.findFirst({
+            where: {
+                designer_id: BigInt(designerId),
+                status: { notIn: ['CANCELED', 'NOSHOW'] },
+                OR: [
+                    { start_time: { lt: end.toDate() }, end_time: { gt: start.toDate() } }
+                ]
+            }
+        });
+        if (res) return true;
+
+        return false;
+    }
+
+
     async findAll(shopId: number, query: GetReservationsDto) {
         const { startDate, endDate } = query;
 

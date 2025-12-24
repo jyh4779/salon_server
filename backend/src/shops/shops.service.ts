@@ -9,6 +9,11 @@ export class ShopsService {
         private timeService: TimeService
     ) { }
 
+    async findAll() {
+        const shops = await this.prisma.sHOPS.findMany();
+        return shops.map(shop => this.mapToDto(shop));
+    }
+
     async findOne(id: number) {
         // Convert to BigInt for Prisma
         const shop = await this.prisma.sHOPS.findUnique({

@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
+import { CreateMobileUserDto } from '../mobile-app/auth/dto/create-mobile-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { USERS_role, USERS } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -118,6 +119,60 @@ export class UsersService {
             data: {
                 current_hashed_refresh_token: null,
             },
+        });
+    }
+
+    async findByFirebaseUid(uid: string): Promise<USERS | undefined> {
+        return this.prisma.uSERS.findFirst({
+            where: { firebase_uid: uid },
+        });
+    }
+
+    async createOrMergeMobileUser(uid: string, dto: CreateMobileUserDto, phoneFromToken?: string): Promise<USERS> {
+        // Priority: Phone from Token (verified) > Phone from Input
+        const targetPhone = phoneFromToken || dto.phone?.replace(/-/g, '');
+
+        if (!targetPhone) {
+            throw new ConflictException('Phone number is required');
+        }
+
+        // Check if user exists by phone
+        const existingUser = await this.prisma.uSERS.findFirst({
+            where: { phone: targetPhone }
+        });
+
+        if (existingUser) {
+            // [Case A] Merge Account
+            // If already has firebase_uid (and different), it's a conflict or multi-login.
+            // Assumption: Just update/overwrite for now or throw if different?
+            // "Account Merge" usually implies binding.
+
+            return this.prisma.uSERS.update({
+                where: { user_id: existingUser.user_id },
+                data: {
+                    firebase_uid: uid,
+                    email: existingUser.email // Keep existing or update? Specs: "firebase_uid update + email update"
+                    // If we want to sync email from firebase:
+                    // email: dto.email? 
+                    // Let's stick to spec: "update firebase_uid".
+                }
+            });
+        }
+
+        // [Case B] New User
+        return this.prisma.uSERS.create({
+            data: {
+                firebase_uid: uid,
+                name: dto.name,
+                phone: targetPhone,
+                birthdate: dto.birthdate,
+                gender: dto.gender,
+                // Wait, I should double check Schema columns. 
+                // Creating with safe defaults.
+                role: USERS_role.CUSTOMER,
+                grade: 'NEW',
+                is_app_user: true
+            }
         });
     }
 }

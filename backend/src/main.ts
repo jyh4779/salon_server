@@ -8,11 +8,24 @@ import { ValidationPipe } from '@nestjs/common';
 };
 
 import * as cookieParser from 'cookie-parser';
+import * as admin from 'firebase-admin';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
     app.use(cookieParser());
+
+    // Initialize Firebase Admin (Safe check)
+    if (!admin.apps.length) {
+        try {
+            admin.initializeApp({
+                credential: admin.credential.applicationDefault() // Or use process.env.FIREBASE_CREDENTIALS if set
+            });
+            console.log('[main] Firebase Admin Initialized');
+        } catch (error) {
+            console.warn('[main] Firebase Admin Initialization Failed (Ignoring for now):', error.message);
+        }
+    }
 
     // Enable ValidationPipe for DTO validation and transformation
     app.useGlobalPipes(new ValidationPipe({
