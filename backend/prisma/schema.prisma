@@ -9,6 +9,7 @@ datasource db {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model CUSTOMER_MEMOS {
+  @@map("CUSTOMER_MEMOS")
   memo_id     BigInt    @id @default(autoincrement())
   user_id     BigInt
   writer_id   BigInt
@@ -27,6 +28,7 @@ model CUSTOMER_MEMOS {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model DESIGNERS {
+  @@map("DESIGNERS")
   designer_id     BigInt            @id @default(autoincrement())
   user_id         BigInt            // Removed @unique to allow multi-shop designers
   shop_id         BigInt
@@ -49,6 +51,7 @@ model DESIGNERS {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model MENUS {
+  @@map("MENUS")
   menu_id           BigInt              @id @default(autoincrement())
   shop_id           BigInt
   category          String?             @db.VarChar(50) // Deprecated: use category_id
@@ -77,6 +80,7 @@ enum MENUS_type {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model PAYMENTS {
+  @@map("PAYMENTS")
   payment_id     BigInt          @id @default(autoincrement())
   reservation_id BigInt
   type           PAYMENTS_type
@@ -91,6 +95,7 @@ model PAYMENTS {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model RESERVATIONS {
+  @@map("RESERVATIONS")
   reservation_id    BigInt              @id @default(autoincrement())
   shop_id           BigInt
   customer_id       BigInt
@@ -116,6 +121,7 @@ model RESERVATIONS {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model RESERVATION_ITEMS {
+  @@map("RESERVATION_ITEMS")
   item_id        BigInt       @id @default(autoincrement())
   reservation_id BigInt
   menu_id        BigInt?
@@ -130,6 +136,7 @@ model RESERVATION_ITEMS {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model SCHEDULE_BLOCKS {
+  @@map("SCHEDULE_BLOCKS")
   block_id    BigInt               @id @default(autoincrement())
   designer_id BigInt
   start_time  DateTime             @db.DateTime(0)
@@ -143,6 +150,7 @@ model SCHEDULE_BLOCKS {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model SHOPS {
+  @@map("SHOPS")
   shop_id            BigInt           @id @default(autoincrement())
   owner_id           BigInt
   name               String           @db.VarChar(100)
@@ -167,6 +175,7 @@ model SHOPS {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model USERS {
+  @@map("USERS")
   user_id           BigInt           @id @default(autoincrement())
   firebase_uid      String?          @unique(map: "firebase_uid") @db.VarChar(128)
   phone             String           @unique(map: "phone") @db.VarChar(20)
@@ -191,6 +200,7 @@ model USERS {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model VISIT_LOGS {
+  @@map("VISIT_LOGS")
   log_id         BigInt       @id @default(autoincrement())
   customer_id    BigInt
   reservation_id BigInt       @unique(map: "reservation_id")
@@ -260,6 +270,7 @@ enum USERS_grade {
 }
 
 model PREPAID_TICKETS {
+  @@map("PREPAID_TICKETS")
   ticket_id     BigInt    @id @default(autoincrement())
   shop_id       BigInt
   name          String    @db.VarChar(100)
@@ -274,6 +285,7 @@ model PREPAID_TICKETS {
 }
 
 model CUSTOMER_PREPAID_BALANCES {
+  @@map("CUSTOMER_PREPAID_BALANCES")
   balance_id   BigInt    @id @default(autoincrement())
   user_id      BigInt
   shop_id      BigInt
@@ -290,6 +302,7 @@ model CUSTOMER_PREPAID_BALANCES {
 }
 
 model PREPAID_TRANSACTIONS {
+  @@map("PREPAID_TRANSACTIONS")
   transaction_id BigInt                    @id @default(autoincrement())
   balance_id     BigInt
   type           PREPAID_TRANSACTIONS_type
