@@ -85,6 +85,43 @@ export class VisitLogsService {
         };
     }
 
+    async findRecentGalleryItems(limit: number = 10) {
+        const logs = await this.prisma.vISIT_LOGS.findMany({
+            where: {
+                photo_urls: {
+                    not: '[]' // Ensure photos exist
+                }
+            },
+            take: limit,
+            orderBy: { visited_at: 'desc' },
+            include: {
+                RESERVATIONS: {
+                    include: {
+                        SHOPS: true,
+                        RESERVATION_ITEMS: {
+                            include: { MENUS: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        return logs.map(log => {
+            let images = [];
+            try {
+                images = JSON.parse(log.photo_urls as string);
+            } catch (e) {
+                images = [];
+            }
+            return {
+                id: Number(log.log_id),
+                title: log.RESERVATIONS?.RESERVATION_ITEMS?.[0]?.menu_name || '시술',
+                shop: log.RESERVATIONS?.SHOPS?.name || 'Unknown Log',
+                image: images[0] || 'https://via.placeholder.com/300'
+            };
+        });
+    }
+
     private mapToDto(log: any) {
         return {
             ...log,

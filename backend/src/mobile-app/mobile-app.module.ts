@@ -11,6 +11,8 @@ import { MobileAuthController } from './auth/mobile-auth.controller';
 import { AppShopsController } from './shops/app-shops.controller';
 import { AppReservationsController } from './reservations/app-reservations.controller';
 
+import { AppGalleryController } from './gallery/app-gallery.controller';
+
 @Module({
     imports: [
         AuthModule,
@@ -24,7 +26,8 @@ import { AppReservationsController } from './reservations/app-reservations.contr
     controllers: [
         MobileAuthController,
         AppShopsController,
-        AppReservationsController
+        AppReservationsController,
+        AppGalleryController
     ],
     providers: [],
 })
